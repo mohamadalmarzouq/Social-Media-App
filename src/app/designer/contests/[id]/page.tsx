@@ -91,8 +91,8 @@ export default function ContestDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Contest Not Found</h1>
-          <p className="text-gray-600 mb-4">The contest you're looking for doesn't exist or is no longer available.</p>
+                      <h1 className="text-2xl font-bold text-gray-900 mb-2">Contest Not Found</h1>
+            <p className="text-gray-600 mb-4">The contest you&apos;re looking for doesn&apos;t exist or is no longer available.</p>
           <Button onClick={() => router.push('/designer/dashboard')}>
             Back to Dashboard
           </Button>

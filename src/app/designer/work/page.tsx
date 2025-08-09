@@ -231,7 +231,7 @@ export default function DesignerWorkPage() {
                       <h4 className="text-sm font-medium text-gray-900 mb-2">Latest Feedback:</h4>
                       <div className="bg-gray-50 rounded-lg p-3">
                         <p className="text-sm text-gray-700 mb-1">
-                          "{submission.comments[0].message}"
+                          &quot;{submission.comments[0].message}&quot;
                         </p>
                         <p className="text-xs text-gray-500">
                           - {submission.comments[0].author.name}

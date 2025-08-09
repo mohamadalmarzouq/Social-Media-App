@@ -109,7 +109,7 @@ export default function YourWorkPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No accepted designs yet</h3>
-              <p className="text-gray-600 mb-4">Once you accept designs from contests, they'll appear here</p>
+              <p className="text-gray-600 mb-4">Once you accept designs from contests, they&apos;ll appear here</p>
               <Button 
                 variant="primary"
                 onClick={() => router.push('/dashboard')}
