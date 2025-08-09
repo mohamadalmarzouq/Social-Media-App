@@ -1,12 +1,12 @@
 {
   "name": "social-media-contest-app",
   "description": "Contest-based marketplace for social media content creation",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "prebuild": "npm install",
-    "build": "npx prisma generate && next build",
+    "build": "npm install && npx prisma generate && next build",
     "start": "next start -p $PORT",
     "lint": "next lint",
     "db:generate": "npx prisma generate",
@@ -34,12 +34,12 @@
     "tailwind-merge": "^2.5.4",
     "typescript": "^5",
     "tailwindcss": "^3.4.14",
-    "autoprefixer": "^10.4.20"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
+    "autoprefixer": "^10.4.20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/node": "^20"
+  },
+  "devDependencies": {
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "@eslint/eslintrc": "^3",
