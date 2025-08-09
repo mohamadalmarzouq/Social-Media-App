@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: npm ci && npm run build
-    startCommand: npm start
+    buildCommand: npm ci && npx prisma generate && npm run build && npx prisma migrate deploy
+    startCommand: next start -p $PORT
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
