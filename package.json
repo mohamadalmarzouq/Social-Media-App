@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx prisma generate && next build",
-    "start": "next start",
+    "build": "npm install && npx prisma generate && next build && node scripts/build-check.js",
+    "start": "node scripts/build-check.js && next start",
     "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate deploy",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate deploy",
     "test:deployment": "node scripts/test-deployment.js",
     "postinstall": "npx prisma generate"
   },
