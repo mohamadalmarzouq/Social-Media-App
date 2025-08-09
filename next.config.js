@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   typescript: {
     // Allow production builds to complete even if there are type errors
@@ -13,4 +12,4 @@ const nextConfig: NextConfig = {
   output: 'standalone',
 };
 
-export default nextConfig;
+module.exports = nextConfig;
