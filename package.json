@@ -11,6 +11,8 @@
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate deploy",
     "test:deployment": "node scripts/test-deployment.js",
+    "render:check": "node scripts/render-deploy-check.js",
+    "clean:build": "rm -rf .next && npm run build",
     "postinstall": "npx prisma generate"
   },
   "dependencies": {
