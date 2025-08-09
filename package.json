@@ -12,6 +12,7 @@
     "db:migrate": "npx prisma migrate deploy",
     "test:deployment": "node scripts/test-deployment.js",
     "render:check": "node scripts/render-deploy-check.js",
+    "debug:render": "node scripts/debug-render.js",
     "clean:build": "rm -rf .next && npm run build",
     "postinstall": "npx prisma generate"
   },
