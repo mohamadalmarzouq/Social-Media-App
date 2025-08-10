@@ -55,29 +55,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only business owners can create contests' }, { status: 403 });
     }
 
+    // Get user by email (safe even if session.id isn't present)
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email! },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const body = await request.json();
+    const { brandName, ...contestData } = body;
     
-    // Create brand first
-    const brand = await prisma.brand.create({
-      data: {
-        userId: session.user.id,
-        logoUrl: body.brandData.logoUrl,
-        colors: body.brandData.colors,
-        fonts: body.brandData.fonts,
-        description: body.brandData.description,
+    // Upsert brand so the FK is always valid
+    const brand = await prisma.brand.upsert({
+      where: { userId: user.id },
+      update: {
+        logoUrl: body.brandData?.logoUrl,
+        colors: body.brandData?.colors || [],
+        fonts: body.brandData?.fonts || [],
+        description: body.brandData?.description,
+      },
+      create: {
+        userId: user.id,
+        logoUrl: body.brandData?.logoUrl,
+        colors: body.brandData?.colors || [],
+        fonts: body.brandData?.fonts || [],
+        description: body.brandData?.description,
       },
     });
 
     // Create contest
     const contest = await prisma.contest.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         brandId: brand.id,
-        title: body.title,
-        description: body.description,
-        platform: body.platform,
-        packageQuota: body.packageQuota,
-        expectedSubmissions: body.expectedSubmissions,
+        title: contestData.title,
+        description: contestData.description,
+        platform: contestData.platform,
+        packageQuota: contestData.packageQuota,
+        expectedSubmissions: contestData.expectedSubmissions,
         status: 'ACTIVE',
       },
       include: {

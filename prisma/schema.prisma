@@ -70,6 +70,7 @@ model Brand {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   contests Contest[]
 
+  @@unique([userId]) // so upsert by userId works
   @@map("brands")
 }
 
