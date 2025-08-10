@@ -24,6 +24,7 @@ enum ContestStatus {
   DRAFT
   ACTIVE
   COMPLETED
+  CANCELLED
 }
 
 enum SubmissionStatus {
