@@ -39,9 +39,9 @@ export function ColorPicker({ colors, onChange, maxColors = 10 }: ColorPickerPro
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Custom Color Input */}
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <Input
           type="text"
           value={customColor}
@@ -55,25 +55,26 @@ export function ColorPicker({ colors, onChange, maxColors = 10 }: ColorPickerPro
           onClick={handleCustomColorAdd}
           variant="outline"
           disabled={colors.length >= maxColors || !customColor}
+          size="sm"
         >
-          Add
+          Add Color
         </Button>
       </div>
 
       {/* Preset Colors Grid */}
       <div>
-        <p className="text-sm text-gray-600 mb-2">Or select from presets:</p>
-        <div className="grid grid-cols-8 gap-2">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Or select from presets:</p>
+        <div className="grid grid-cols-8 gap-3">
           {PRESET_COLORS.map((color) => (
             <button
               key={color}
               type="button"
               onClick={() => addColor(color)}
               disabled={colors.includes(color) || colors.length >= maxColors}
-              className={`w-8 h-8 rounded border-2 transition-all ${
+              className={`w-10 h-10 rounded-2xl border-2 transition-all duration-200 ${
                 colors.includes(color) 
-                  ? 'border-gray-400 opacity-50 cursor-not-allowed' 
-                  : 'border-gray-300 hover:border-gray-500 hover:scale-110'
+                  ? 'border-neutral-400 opacity-50 cursor-not-allowed scale-90' 
+                  : 'border-neutral-300 hover:border-primary-400 hover:scale-110 hover:shadow-lg'
               }`}
               style={{ backgroundColor: color }}
               title={color}
@@ -85,19 +86,21 @@ export function ColorPicker({ colors, onChange, maxColors = 10 }: ColorPickerPro
       {/* Selected Colors */}
       {colors.length > 0 && (
         <div>
-          <p className="text-sm text-gray-600 mb-2">Selected colors ({colors.length}/{maxColors}):</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Selected colors ({colors.length}/{maxColors}):
+          </p>
+          <div className="flex flex-wrap gap-3">
             {colors.map((color, index) => (
-              <div key={index} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+              <div key={index} className="flex items-center gap-3 bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all duration-200">
                 <div 
-                  className="w-6 h-6 rounded border border-gray-300" 
+                  className="w-8 h-8 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 shadow-inner" 
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm font-mono text-gray-700">{color}</span>
+                <span className="text-sm font-mono text-neutral-700 dark:text-neutral-300">{color}</span>
                 <button
                   type="button"
                   onClick={() => removeColor(index)}
-                  className="text-red-500 hover:text-red-700 ml-2 text-lg font-bold"
+                  className="text-danger-500 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 ml-2 text-lg font-bold hover:scale-110 transition-transform duration-150"
                 >
                   ×
                 </button>

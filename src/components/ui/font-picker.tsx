@@ -59,15 +59,15 @@ export function FontPicker({ fonts, onChange, maxFonts = 5 }: FontPickerProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Custom Font Input */}
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <input
           type="text"
           value={customFont}
           onChange={(e) => setCustomFont(e.target.value)}
           placeholder="Enter custom font name"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 h-11 px-4 py-3 bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
           maxLength={50}
         />
         <Button 
@@ -75,35 +75,36 @@ export function FontPicker({ fonts, onChange, maxFonts = 5 }: FontPickerProps) {
           onClick={handleCustomFontAdd}
           variant="outline"
           disabled={fonts.length >= maxFonts || !customFont.trim()}
+          size="sm"
         >
-          Add
+          Add Font
         </Button>
       </div>
 
       {/* Preset Fonts Grid */}
       <div>
-        <p className="text-sm text-gray-600 mb-3">Or select from popular fonts:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Or select from popular fonts:</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
           {PRESET_FONTS.map((font) => (
             <button
               key={font.name}
               type="button"
               onClick={() => addFont(font.name)}
               disabled={fonts.includes(font.name) || fonts.length >= maxFonts}
-              className={`p-3 border rounded-lg text-left transition-all ${
+              className={`p-4 border-2 rounded-2xl text-left transition-all duration-200 ${
                 fonts.includes(font.name) 
-                  ? 'border-gray-400 bg-gray-100 opacity-50 cursor-not-allowed' 
-                  : 'border-gray-300 hover:border-blue-300 hover:bg-blue-50'
+                  ? 'border-neutral-400 bg-neutral-100 dark:bg-neutral-800 opacity-50 cursor-not-allowed scale-95' 
+                  : 'border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/20 hover:shadow-md hover:scale-105'
               }`}
             >
               <div 
-                className="text-lg font-medium mb-1"
+                className="text-lg font-semibold mb-2 text-neutral-900 dark:text-neutral-100"
                 style={{ fontFamily: font.family }}
               >
                 {font.name}
               </div>
               <div 
-                className="text-sm text-gray-600"
+                className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
                 style={{ fontFamily: font.family }}
               >
                 The quick brown fox jumps over the lazy dog
@@ -116,18 +117,20 @@ export function FontPicker({ fonts, onChange, maxFonts = 5 }: FontPickerProps) {
       {/* Selected Fonts */}
       {fonts.length > 0 && (
         <div>
-          <p className="text-sm text-gray-600 mb-2">Selected fonts ({fonts.length}/{maxFonts}):</p>
-          <div className="space-y-2">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Selected fonts ({fonts.length}/{maxFonts}):
+          </p>
+          <div className="space-y-3">
             {fonts.map((font, index) => (
-              <div key={index} className="flex items-center justify-between bg-gray-100 rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{font}</span>
-                  <span className="text-xs text-gray-500">({font})</span>
+              <div key={index} className="flex items-center justify-between bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{font}</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">({font})</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFont(index)}
-                  className="text-red-500 hover:text-red-700 ml-2 text-lg font-bold"
+                  className="text-danger-500 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 ml-2 text-lg font-bold hover:scale-110 transition-transform duration-150"
                 >
                   ×
                 </button>

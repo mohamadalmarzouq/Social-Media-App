@@ -43,7 +43,16 @@ export default function CreateContestPage() {
   const [fonts, setFonts] = useState<string[]>([]);
 
   if (status === 'loading') {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="spinner-modern w-12 h-12 mx-auto mb-4"></div>
+            <p className="text-lg text-neutral-600 dark:text-neutral-400">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (status === 'unauthenticated') {
@@ -120,80 +129,96 @@ export default function CreateContestPage() {
   const watchedPackageType = watch('packageType');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.back()}
-              className="p-2"
-            >
-              ← Back
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Create Contest</h1>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/20">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Background Blobs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blob rounded-full opacity-20"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blob-accent rounded-full opacity-20"></div>
+        </div>
+        
+        <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/50 dark:border-neutral-700/50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => router.back()}
+                className="p-2 rounded-2xl"
+              >
+                ← Back
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-4xl md:text-6xl font-heading font-bold bg-gradient-to-r from-primary-600 via-accent-600 to-primary-700 bg-clip-text text-transparent">
+                  Create Contest
+                </h1>
+                <p className="text-xl text-neutral-600 dark:text-neutral-400 mt-2 opacity-70">
+                  Launch your design contest and connect with talented designers
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-              {error}
+            <div className="bg-danger-50 dark:bg-danger-950/50 border-2 border-danger-200 dark:border-danger-500/30 text-danger-700 dark:text-danger-300 px-6 py-4 rounded-2xl backdrop-blur-sm">
+              <p className="font-medium">{error}</p>
             </div>
           )}
 
           {/* Contest Details */}
-          <Card>
+          <Card className="card-glass">
             <CardHeader>
-              <CardTitle>Contest Details</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl">Contest Details</CardTitle>
+              <CardDescription className="text-lg">
                 Provide the basic information about your contest
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                   Contest Title
                 </label>
                 <Input
                   {...register('title')}
                   placeholder="e.g., Logo Design for Tech Startup"
-                  className={errors.title ? 'border-red-500' : ''}
+                  className={errors.title ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20' : ''}
                 />
                 {errors.title && (
-                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                  <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.title.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                   Description (Optional)
                 </label>
                 <textarea
                   {...register('description')}
                   rows={4}
                   placeholder="Describe what you're looking for, your target audience, style preferences, etc."
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.description ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
+                    errors.description ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
+                  } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400`}
                 />
                 {errors.description && (
-                  <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                  <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.description.message}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                     Service
                   </label>
                   <select
                     {...register('platform')}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.platform ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
+                      errors.platform ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
+                    } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
                   >
                     <option value="">Select service</option>
                     <option value="LOGO">Logo</option>
@@ -201,39 +226,39 @@ export default function CreateContestPage() {
                     <option value="TIKTOK">TikTok (1080x1920)</option>
                   </select>
                   {errors.platform && (
-                    <p className="mt-1 text-sm text-red-600">{errors.platform.message}</p>
+                    <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.platform.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                     Files Needed
                   </label>
                   <select
                     {...register('fileType')}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.fileType ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
+                      errors.fileType ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
+                    } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
                   >
                     <option value="">Select file type</option>
                     <option value="STATIC_POST">Static Post</option>
                     <option value="ANIMATED_POST">Animated Post</option>
                   </select>
                   {errors.fileType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.fileType.message}</p>
+                    <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.fileType.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                     Package Type
                   </label>
                   <select
                     {...register('packageType')}
                     onChange={(e) => handlePackageTypeChange(e.target.value as 'PACKAGE_1' | 'PACKAGE_2' | 'PACKAGE_3')}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.packageType ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
+                      errors.packageType ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
+                    } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
                   >
                     <option value="">Select package</option>
                     <option value="PACKAGE_1">Package 1 (Expect 30, Get 1)</option>
@@ -241,25 +266,25 @@ export default function CreateContestPage() {
                     <option value="PACKAGE_3">Package 3 (Expect 90, Get 3)</option>
                   </select>
                   {errors.packageType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.packageType.message}</p>
+                    <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.packageType.message}</p>
                   )}
                 </div>
               </div>
 
               {/* Package Details Display */}
               {watchedPackageType && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-950/30 dark:to-accent-950/30 border-2 border-primary-200 dark:border-primary-500/30 rounded-2xl p-6 backdrop-blur-sm">
+                  <div className="grid grid-cols-2 gap-6 text-center">
                     <div>
-                      <span className="font-medium text-blue-900">Expected Submissions:</span>
-                      <div className="text-blue-700">
+                      <span className="block text-lg font-semibold text-primary-900 dark:text-primary-100 mb-1">Expected Submissions</span>
+                      <div className="text-3xl font-bold text-primary-700 dark:text-primary-300">
                         {watchedPackageType === 'PACKAGE_1' ? '30' : 
                          watchedPackageType === 'PACKAGE_2' ? '60' : '90'}
                       </div>
                     </div>
                     <div>
-                      <span className="font-medium text-blue-900">Final Designs:</span>
-                      <div className="text-blue-700">
+                      <span className="block text-lg font-semibold text-primary-900 dark:text-primary-100 mb-1">Final Designs</span>
+                      <div className="text-3xl font-bold text-primary-700 dark:text-primary-300">
                         {watchedPackageType === 'PACKAGE_1' ? '1' : 
                          watchedPackageType === 'PACKAGE_2' ? '2' : '3'}
                       </div>
@@ -271,29 +296,29 @@ export default function CreateContestPage() {
           </Card>
 
           {/* Brand Guidelines */}
-          <Card>
+          <Card className="card-glass">
             <CardHeader>
-              <CardTitle>Brand Guidelines</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl">Brand Guidelines</CardTitle>
+              <CardDescription className="text-lg">
                 Upload your brand assets and provide style guidelines
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                   Brand Description
                 </label>
                 <textarea
                   {...register('brandData.description')}
                   rows={3}
                   placeholder="Describe your brand style, personality, and any specific requirements..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
                 />
               </div>
 
               {/* Brand Colors */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                   Brand Colors
                 </label>
                 <ColorPicker 
@@ -305,7 +330,7 @@ export default function CreateContestPage() {
 
               {/* Brand Fonts */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                   Brand Fonts
                 </label>
                 <FontPicker 
@@ -318,11 +343,12 @@ export default function CreateContestPage() {
           </Card>
 
           {/* Submit */}
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-6">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => router.back()}
+              size="lg"
             >
               Cancel
             </Button>
@@ -330,6 +356,7 @@ export default function CreateContestPage() {
               type="submit" 
               variant="primary"
               disabled={isLoading}
+              size="lg"
             >
               {isLoading ? 'Creating Contest...' : 'Create Contest'}
             </Button>
