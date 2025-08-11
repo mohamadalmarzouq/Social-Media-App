@@ -53,6 +53,15 @@ interface MySubmission {
     url: string;
     type: string;
   }[];
+  comments: {
+    id: string;
+    message: string;
+    createdAt: string;
+    author: {
+      name: string;
+      role: string;
+    };
+  }[];
 }
 
 export default function DesignerDashboardPage() {
@@ -318,6 +327,11 @@ export default function DesignerDashboardPage() {
                             }`}>
                               {submission.status === 'PENDING' ? 'Under Review' : submission.status}
                             </span>
+                            {submission.comments.length > 0 && (
+                              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                💬 {submission.comments.length} feedback
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

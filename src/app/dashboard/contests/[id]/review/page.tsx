@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 interface Submission {
   id: string;
@@ -62,13 +63,15 @@ export default function ReviewSubmissionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [commenting, setCommenting] = useState<string | null>(null);
+  const [newComments, setNewComments] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role !== 'USER') {
       router.push('/designer/dashboard');
       return;
     }
-    
+
     if (status === 'authenticated') {
       fetchData();
     }
@@ -120,6 +123,43 @@ export default function ReviewSubmissionsPage() {
     }
   };
 
+  const handleAddComment = async (submissionId: string) => {
+    const comment = newComments[submissionId];
+    if (!comment || !comment.trim()) {
+      setError('Please enter a comment');
+      return;
+    }
+
+    setCommenting(submissionId);
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: comment }),
+      });
+
+      if (response.ok) {
+        // Clear the comment input and refresh data
+        setNewComments(prev => ({ ...prev, [submissionId]: '' }));
+        await fetchData();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to add comment');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      setError('Failed to add comment');
+    } finally {
+      setCommenting(null);
+    }
+  };
+
+  const handleCommentChange = (submissionId: string, value: string) => {
+    setNewComments(prev => ({ ...prev, [submissionId]: value }));
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -154,8 +194,8 @@ export default function ReviewSubmissionsPage() {
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => router.push(`/dashboard/contests/${contest.id}`)}
               className="p-2"
             >
@@ -274,10 +314,12 @@ export default function ReviewSubmissionsPage() {
                   )}
 
                   {/* Comments */}
-                  {submission.comments.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Comments</h4>
-                      <div className="space-y-2">
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Comments & Feedback</h4>
+                    
+                    {/* Existing Comments */}
+                    {submission.comments.length > 0 && (
+                      <div className="space-y-2 mb-4">
                         {submission.comments.map((comment) => (
                           <div key={comment.id} className="bg-gray-50 p-3 rounded-md">
                             <div className="flex items-center gap-2 mb-1">
@@ -285,13 +327,38 @@ export default function ReviewSubmissionsPage() {
                               <span className="text-xs text-gray-500">
                                 {new Date(comment.createdAt).toLocaleDateString()}
                               </span>
+                              <span className="text-xs text-gray-400">({comment.author.role})</span>
                             </div>
                             <p className="text-sm text-gray-700">{comment.message}</p>
                           </div>
                         ))}
                       </div>
+                    )}
+
+                    {/* Add New Comment */}
+                    <div className="border rounded-lg p-3 bg-white">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add feedback or comment for the designer..."
+                          value={newComments[submission.id] || ''}
+                          onChange={(e) => handleCommentChange(submission.id, e.target.value)}
+                          className="flex-1"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleAddComment(submission.id);
+                            }
+                          }}
+                        />
+                        <Button
+                          onClick={() => handleAddComment(submission.id)}
+                          disabled={commenting === submission.id || !newComments[submission.id]?.trim()}
+                          size="sm"
+                        >
+                          {commenting === submission.id ? 'Adding...' : 'Add Comment'}
+                        </Button>
+                      </div>
                     </div>
-                  )}
+                  </div>
 
                   {/* Action Buttons */}
                   {submission.status === 'PENDING' && (

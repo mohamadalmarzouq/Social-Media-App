@@ -228,14 +228,22 @@ export default function DesignerWorkPage() {
                 <CardContent>
                   {submission.comments.length > 0 && (
                     <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Latest Feedback:</h4>
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-sm text-gray-700 mb-1">
-                          &quot;{submission.comments[0].message}&quot;
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          - {submission.comments[0].author.name}
-                        </p>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">Client Feedback:</h4>
+                      <div className="space-y-2">
+                        {submission.comments.map((comment, index) => (
+                          <div key={comment.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium text-blue-700">{comment.author.name}</span>
+                              <span className="text-xs text-blue-500">({comment.author.role})</span>
+                              <span className="text-xs text-blue-400">
+                                {formatDate(new Date(comment.createdAt))}
+                              </span>
+                            </div>
+                            <p className="text-sm text-blue-800">
+                              &quot;{comment.message}&quot;
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
