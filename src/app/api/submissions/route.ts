@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         id: true,
         status: true,
         round: true,
-        expectedSubmissions: number,
+        expectedSubmissions: true,
         _count: {
           select: {
             submissions: true,
