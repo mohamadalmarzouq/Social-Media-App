@@ -225,14 +225,19 @@ export default function DesignerDashboardPage() {
                           <Button variant="outline" size="sm">View Details</Button>
                         </Link>
                         {contest.userSubmission ? (
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            disabled
-                          >
-                            {contest.userSubmission.status === 'PENDING' ? 'Submitted' : 
-                             contest.userSubmission.status === 'ACCEPTED' ? 'Accepted' : 'Passed'}
-                          </Button>
+                          contest.userSubmission.status === 'PASSED' ? (
+                            <Link href={`/designer/contests/${contest.id}/submit`}>
+                              <Button variant="primary" size="sm">Resubmit Design</Button>
+                            </Link>
+                          ) : (
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              disabled
+                            >
+                              {contest.userSubmission.status === 'PENDING' ? 'Submitted' : 'Accepted'}
+                            </Button>
+                          )
                         ) : (
                           <Link href={`/designer/contests/${contest.id}/submit`}>
                             <Button variant="primary" size="sm">Submit Design</Button>

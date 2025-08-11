@@ -127,13 +127,18 @@ export default function ContestDetailPage() {
             </div>
             <div className="flex gap-2">
               {contest.userSubmission ? (
-                <Button 
-                  variant="secondary"
-                  disabled
-                >
-                  {contest.userSubmission.status === 'PENDING' ? 'Submitted' : 
-                   contest.userSubmission.status === 'ACCEPTED' ? 'Accepted' : 'Passed'}
-                </Button>
+                contest.userSubmission.status === 'PASSED' ? (
+                  <Link href={`/designer/contests/${contest.id}/submit`}>
+                    <Button variant="primary">Resubmit Design</Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    variant="secondary"
+                    disabled
+                  >
+                    {contest.userSubmission.status === 'PENDING' ? 'Submitted' : 'Accepted'}
+                  </Button>
+                )
               ) : (
                 <Link href={`/designer/contests/${contest.id}/submit`}>
                   <Button variant="primary">Submit Design</Button>

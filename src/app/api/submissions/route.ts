@@ -56,9 +56,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingSubmission) {
-      return NextResponse.json({ 
-        error: 'You already have a submission for this contest in the current round' 
-      }, { status: 400 });
+      // Allow resubmission if previous submission was PASSED
+      if (existingSubmission.status === 'PASSED') {
+        // Delete the old passed submission to allow new one
+        await prisma.submission.delete({
+          where: { id: existingSubmission.id },
+        });
+      } else {
+        return NextResponse.json({ 
+          error: 'You already have a submission for this contest in the current round' 
+        }, { status: 400 });
+      }
     }
 
     // Create the submission
