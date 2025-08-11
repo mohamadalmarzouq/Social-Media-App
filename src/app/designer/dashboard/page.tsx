@@ -333,6 +333,14 @@ export default function DesignerDashboardPage() {
                               </span>
                             )}
                           </div>
+                          
+                          <div className="mt-3">
+                            <Link href={`/designer/submissions/${submission.id}`}>
+                              <Button variant="outline" size="sm">
+                                View Details
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>

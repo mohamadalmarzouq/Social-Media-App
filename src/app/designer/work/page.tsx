@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate, getRoundName } from '@/lib/utils';
+import Link from 'next/link';
 
 interface Submission {
   id: string;
@@ -260,6 +261,12 @@ export default function DesignerWorkPage() {
                     >
                       View
                     </Button>
+                    
+                    <Link href={`/designer/submissions/${submission.id}`}>
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </Link>
                     
                     {submission.status === 'ACCEPTED' && (
                       <Button 
