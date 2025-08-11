@@ -50,9 +50,30 @@ export class RenderDiskStorage implements StorageProvider {
 
   private async ensureUploadDir(): Promise<void> {
     try {
+      console.log('Storage: Attempting to create upload directory:', this.uploadDir);
       await mkdir(this.uploadDir, { recursive: true });
+      console.log('Storage: Upload directory created/verified successfully');
+      
+      // Test write permissions
+      const testFile = path.join(this.uploadDir, '.test');
+      await writeFile(testFile, 'test');
+      await fs.promises.unlink(testFile);
+      console.log('Storage: Write permissions verified');
     } catch (error) {
-      // Directory might already exist
+      console.error('Storage: Error creating upload directory:', error);
+      
+      // Try fallback directory
+      const fallbackDir = './uploads';
+      console.log('Storage: Trying fallback directory:', fallbackDir);
+      
+      try {
+        this.uploadDir = fallbackDir;
+        await mkdir(fallbackDir, { recursive: true });
+        console.log('Storage: Fallback directory created successfully');
+      } catch (fallbackError) {
+        console.error('Storage: Fallback directory also failed:', fallbackError);
+        throw new Error(`Failed to create upload directory. Tried: ${this.uploadDir} and ${fallbackDir}`);
+      }
     }
   }
 
@@ -79,8 +100,27 @@ export class RenderDiskStorage implements StorageProvider {
 
   // Helper method to save file from buffer
   async saveFile(filename: string, buffer: Buffer): Promise<void> {
-    await this.ensureUploadDir();
-    const filePath = path.join(this.uploadDir, filename);
-    await writeFile(filePath, buffer);
+    try {
+      console.log('Storage: Ensuring upload directory exists...');
+      await this.ensureUploadDir();
+      
+      const filePath = path.join(this.uploadDir, filename);
+      console.log('Storage: Saving file to path:', filePath);
+      console.log('Storage: Upload directory:', this.uploadDir);
+      console.log('Storage: Buffer size:', buffer.length);
+      
+      await writeFile(filePath, buffer);
+      console.log('Storage: File written successfully');
+      
+      // Verify file was written
+      const stats = await fs.promises.stat(filePath);
+      console.log('Storage: File stats after write:', {
+        size: stats.size,
+        exists: true
+      });
+    } catch (error) {
+      console.error('Storage: Error saving file:', error);
+      throw error;
+    }
   }
 }

@@ -1,37 +1,50 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { RenderDiskStorage } from '@/lib/storage/render-disk-storage';
+import fs from 'fs/promises';
+import path from 'path';
 
 export async function GET() {
   try {
-    // Test database connection
-    await prisma.$connect();
-    await prisma.$disconnect();
-
-    // Check environment variables
-    const envStatus = {
-      DATABASE_URL: !!process.env.DATABASE_URL,
-      NEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
-      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_SECRET.length >= 32,
-      STORAGE_DRIVER: process.env.STORAGE_DRIVER || 'not set',
-      UPLOAD_DIR: process.env.UPLOAD_DIR || 'not set',
-      NODE_ENV: process.env.NODE_ENV || 'not set',
-    };
+    const storage = new RenderDiskStorage();
+    
+    // Test file system access
+    let fileSystemStatus = 'unknown';
+    let uploadDir = 'unknown';
+    
+    try {
+      uploadDir = process.env.UPLOAD_DIR || process.env.LOCAL_UPLOAD_DIR || './uploads';
+      await fs.access(uploadDir);
+      fileSystemStatus = 'accessible';
+    } catch (error) {
+      fileSystemStatus = 'not accessible';
+    }
+    
+    // Test write permissions
+    let writePermission = 'unknown';
+    try {
+      const testFile = path.join(uploadDir, '.health-test');
+      await fs.writeFile(testFile, 'health test');
+      await fs.unlink(testFile);
+      writePermission = 'writable';
+    } catch (error) {
+      writePermission = 'not writable';
+    }
 
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      environment: envStatus,
-      database: 'connected'
+      environment: process.env.NODE_ENV || 'unknown',
+      fileSystem: {
+        uploadDir,
+        status: fileSystemStatus,
+        writePermission
+      }
     });
-
   } catch (error) {
-    console.error('Health check failed:', error);
-    
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error',
-      database: 'disconnected'
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

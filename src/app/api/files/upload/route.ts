@@ -25,6 +25,14 @@ export async function POST(request: NextRequest) {
     const submissionId = formData.get('submissionId') as string;
     const type = formData.get('type') as string;
 
+    console.log('File upload attempt:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      submissionId,
+      type
+    });
+
     if (!file || !submissionId || !type) {
       return NextResponse.json({ 
         error: 'File, submissionId, and type are required' 
@@ -71,12 +79,25 @@ export async function POST(request: NextRequest) {
     const ext = path.extname(file.name);
     const filename = `${timestamp}_${randomString}${ext}`;
 
+    console.log('Generated filename:', filename);
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Save file using storage
-    await storage.saveFile(filename, buffer);
+    console.log('File converted to buffer, size:', buffer.length);
+
+    try {
+      // Save file using storage
+      await storage.saveFile(filename, buffer);
+      console.log('File saved successfully to storage');
+    } catch (storageError) {
+      console.error('Storage error:', storageError);
+      return NextResponse.json({ 
+        error: 'Failed to save file to storage',
+        details: storageError instanceof Error ? storageError.message : 'Unknown storage error'
+      }, { status: 500 });
+    }
 
     // Create asset record in database
     const asset = await prisma.asset.create({
@@ -90,6 +111,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('Asset created in database:', asset.id);
+
     return NextResponse.json({
       message: 'File uploaded successfully',
       asset: {
@@ -102,7 +125,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
