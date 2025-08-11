@@ -9,6 +9,8 @@ import { contestSchema, type ContestInput } from '@/lib/validations/contest';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ColorPicker } from '@/components/ui/color-picker';
+import { FontPicker } from '@/components/ui/font-picker';
 
 export default function CreateContestPage() {
   const { data: session, status } = useSession();
@@ -25,8 +27,11 @@ export default function CreateContestPage() {
   } = useForm<ContestInput>({
     resolver: zodResolver(contestSchema),
     defaultValues: {
-      packageQuota: 5,
-      expectedSubmissions: 20,
+      platform: 'LOGO',
+      fileType: 'STATIC_POST',
+      packageType: 'PACKAGE_1',
+      packageQuota: 1,
+      expectedSubmissions: 30,
       brandData: {
         colors: [],
         fonts: [],
@@ -36,8 +41,6 @@ export default function CreateContestPage() {
 
   const [colors, setColors] = useState<string[]>([]);
   const [fonts, setFonts] = useState<string[]>([]);
-  const [colorInput, setColorInput] = useState('');
-  const [fontInput, setFontInput] = useState('');
 
   if (status === 'loading') {
     return <div>Loading...</div>;
@@ -53,34 +56,36 @@ export default function CreateContestPage() {
     return null;
   }
 
-  const addColor = () => {
-    if (colorInput && !colors.includes(colorInput) && colors.length < 10) {
-      const newColors = [...colors, colorInput];
-      setColors(newColors);
-      setValue('brandData.colors', newColors);
-      setColorInput('');
-    }
-  };
-
-  const removeColor = (index: number) => {
-    const newColors = colors.filter((_, i) => i !== index);
+  // Update form values when colors/fonts change
+  const handleColorsChange = (newColors: string[]) => {
     setColors(newColors);
     setValue('brandData.colors', newColors);
   };
 
-  const addFont = () => {
-    if (fontInput && !fonts.includes(fontInput) && fonts.length < 5) {
-      const newFonts = [...fonts, fontInput];
-      setFonts(newFonts);
-      setValue('brandData.fonts', newFonts);
-      setFontInput('');
-    }
-  };
-
-  const removeFont = (index: number) => {
-    const newFonts = fonts.filter((_, i) => i !== index);
+  const handleFontsChange = (newFonts: string[]) => {
     setFonts(newFonts);
     setValue('brandData.fonts', newFonts);
+  };
+
+  // Handle package type change to update expected submissions
+  const handlePackageTypeChange = (packageType: 'PACKAGE_1' | 'PACKAGE_2' | 'PACKAGE_3') => {
+    setValue('packageType', packageType);
+    
+    // Update expected submissions and package quota based on package type
+    switch (packageType) {
+      case 'PACKAGE_1':
+        setValue('expectedSubmissions', 30);
+        setValue('packageQuota', 1);
+        break;
+      case 'PACKAGE_2':
+        setValue('expectedSubmissions', 60);
+        setValue('packageQuota', 2);
+        break;
+      case 'PACKAGE_3':
+        setValue('expectedSubmissions', 90);
+        setValue('packageQuota', 3);
+        break;
+    }
   };
 
   const onSubmit = async (data: ContestInput) => {
@@ -111,6 +116,8 @@ export default function CreateContestPage() {
       setIsLoading(false);
     }
   };
+
+  const watchedPackageType = watch('packageType');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,7 +159,7 @@ export default function CreateContestPage() {
                 </label>
                 <Input
                   {...register('title')}
-                  placeholder="e.g., Instagram Posts for Summer Menu Launch"
+                  placeholder="e.g., Logo Design for Tech Startup"
                   className={errors.title ? 'border-red-500' : ''}
                 />
                 {errors.title && (
@@ -180,7 +187,7 @@ export default function CreateContestPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Platform
+                    Service
                   </label>
                   <select
                     {...register('platform')}
@@ -188,7 +195,8 @@ export default function CreateContestPage() {
                       errors.platform ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">Select platform</option>
+                    <option value="">Select service</option>
+                    <option value="LOGO">Logo</option>
                     <option value="INSTAGRAM">Instagram (1080x1080)</option>
                     <option value="TIKTOK">TikTok (1080x1920)</option>
                   </select>
@@ -199,36 +207,66 @@ export default function CreateContestPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Final Designs Needed
+                    Files Needed
                   </label>
-                  <Input
-                    {...register('packageQuota', { valueAsNumber: true })}
-                    type="number"
-                    min="1"
-                    max="50"
-                    className={errors.packageQuota ? 'border-red-500' : ''}
-                  />
-                  {errors.packageQuota && (
-                    <p className="mt-1 text-sm text-red-600">{errors.packageQuota.message}</p>
+                  <select
+                    {...register('fileType')}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.fileType ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select file type</option>
+                    <option value="STATIC_POST">Static Post</option>
+                    <option value="ANIMATED_POST">Animated Post</option>
+                  </select>
+                  {errors.fileType && (
+                    <p className="mt-1 text-sm text-red-600">{errors.fileType.message}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Expected Submissions
+                    Package Type
                   </label>
-                  <Input
-                    {...register('expectedSubmissions', { valueAsNumber: true })}
-                    type="number"
-                    min="5"
-                    max="100"
-                    className={errors.expectedSubmissions ? 'border-red-500' : ''}
-                  />
-                  {errors.expectedSubmissions && (
-                    <p className="mt-1 text-sm text-red-600">{errors.expectedSubmissions.message}</p>
+                  <select
+                    {...register('packageType')}
+                    onChange={(e) => handlePackageTypeChange(e.target.value as 'PACKAGE_1' | 'PACKAGE_2' | 'PACKAGE_3')}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.packageType ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select package</option>
+                    <option value="PACKAGE_1">Package 1 (Expect 30, Get 1)</option>
+                    <option value="PACKAGE_2">Package 2 (Expect 60, Get 2)</option>
+                    <option value="PACKAGE_3">Package 3 (Expect 90, Get 3)</option>
+                  </select>
+                  {errors.packageType && (
+                    <p className="mt-1 text-sm text-red-600">{errors.packageType.message}</p>
                   )}
                 </div>
               </div>
+
+              {/* Package Details Display */}
+              {watchedPackageType && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-blue-900">Expected Submissions:</span>
+                      <div className="text-blue-700">
+                        {watchedPackageType === 'PACKAGE_1' ? '30' : 
+                         watchedPackageType === 'PACKAGE_2' ? '60' : '90'}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-blue-900">Final Designs:</span>
+                      <div className="text-blue-700">
+                        {watchedPackageType === 'PACKAGE_1' ? '1' : 
+                         watchedPackageType === 'PACKAGE_2' ? '2' : '3'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -258,46 +296,11 @@ export default function CreateContestPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Brand Colors
                 </label>
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={colorInput}
-                      onChange={(e) => setColorInput(e.target.value)}
-                      placeholder="Enter hex color (e.g., #FF5733)"
-                      className="flex-1"
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addColor}
-                      variant="outline"
-                      disabled={colors.length >= 10}
-                    >
-                      Add Color
-                    </Button>
-                  </div>
-                  
-                  {colors.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {colors.map((color, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                          <div 
-                            className="w-6 h-6 rounded border border-gray-300" 
-                            style={{ backgroundColor: color }}
-                          ></div>
-                          <span className="text-sm font-mono">{color}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeColor(index)}
-                            className="text-red-500 hover:text-red-700 ml-2"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ColorPicker 
+                  colors={colors} 
+                  onChange={handleColorsChange}
+                  maxColors={10}
+                />
               </div>
 
               {/* Brand Fonts */}
@@ -305,42 +308,11 @@ export default function CreateContestPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Brand Fonts
                 </label>
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={fontInput}
-                      onChange={(e) => setFontInput(e.target.value)}
-                      placeholder="Enter font name (e.g., Arial, Helvetica)"
-                      className="flex-1"
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addFont}
-                      variant="outline"
-                      disabled={fonts.length >= 5}
-                    >
-                      Add Font
-                    </Button>
-                  </div>
-                  
-                  {fonts.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {fonts.map((font, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                          <span className="text-sm">{font}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeFont(index)}
-                            className="text-red-500 hover:text-red-700 ml-2"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <FontPicker 
+                  fonts={fonts} 
+                  onChange={handleFontsChange}
+                  maxFonts={5}
+                />
               </div>
             </CardContent>
           </Card>

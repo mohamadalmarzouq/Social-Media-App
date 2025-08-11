@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create contest
+    // Create contest with new fields
     const contest = await prisma.contest.create({
       data: {
         userId: user.id,
@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         title: contestData.title,
         description: contestData.description,
         platform: contestData.platform,
+        fileType: contestData.fileType,
+        packageType: contestData.packageType,
         packageQuota: contestData.packageQuota,
         expectedSubmissions: contestData.expectedSubmissions,
         status: 'ACTIVE',

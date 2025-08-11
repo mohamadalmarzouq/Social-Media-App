@@ -10,8 +10,14 @@ export const brandSchema = z.object({
 export const contestSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
   description: z.string().max(2000, 'Description must be less than 2000 characters').optional(),
-  platform: z.enum(['INSTAGRAM', 'TIKTOK'], {
-    required_error: 'Please select a platform',
+  platform: z.enum(['LOGO', 'INSTAGRAM', 'TIKTOK'], {
+    required_error: 'Please select a service',
+  }),
+  fileType: z.enum(['STATIC_POST', 'ANIMATED_POST'], {
+    required_error: 'Please select a file type',
+  }),
+  packageType: z.enum(['PACKAGE_1', 'PACKAGE_2', 'PACKAGE_3'], {
+    required_error: 'Please select a package type',
   }),
   packageQuota: z.number().min(1, 'Must need at least 1 design').max(50, 'Maximum 50 designs per contest'),
   expectedSubmissions: z.number().min(5, 'Must expect at least 5 submissions').max(100, 'Maximum 100 expected submissions'),

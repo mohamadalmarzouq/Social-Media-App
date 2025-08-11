@@ -16,8 +16,20 @@ enum Role {
 }
 
 enum Platform {
+  LOGO
   INSTAGRAM
   TIKTOK
+}
+
+enum FileType {
+  STATIC_POST
+  ANIMATED_POST
+}
+
+enum PackageType {
+  PACKAGE_1
+  PACKAGE_2
+  PACKAGE_3
 }
 
 enum ContestStatus {
@@ -81,6 +93,8 @@ model Contest {
   title               String
   description         String?
   platform            Platform
+  fileType            FileType?     // Type of files needed (Static Post, Animated Post)
+  packageType         PackageType?  // Package type (Package 1, 2, or 3)
   packageQuota        Int           // Number of final designs needed
   expectedSubmissions Int           // Expected submissions per round
   status              ContestStatus @default(DRAFT)
