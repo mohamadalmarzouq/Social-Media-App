@@ -76,4 +76,11 @@ export class RenderDiskStorage implements StorageProvider {
       return false;
     }
   }
+
+  // Helper method to save file from buffer
+  async saveFile(filename: string, buffer: Buffer): Promise<void> {
+    await this.ensureUploadDir();
+    const filePath = path.join(this.uploadDir, filename);
+    await writeFile(filePath, buffer);
+  }
 }
