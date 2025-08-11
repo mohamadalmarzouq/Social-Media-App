@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { formatDate, getRoundName } from '@/lib/utils';
 
 interface Submission {
@@ -56,6 +57,8 @@ export default function SubmissionDetailPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [replyMessage, setReplyMessage] = useState('');
+  const [replying, setReplying] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role === 'USER') {
@@ -82,6 +85,38 @@ export default function SubmissionDetailPage() {
       setError('Failed to fetch submission details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReply = async () => {
+    if (!replyMessage.trim()) {
+      setError('Please enter a reply message');
+      return;
+    }
+
+    setReplying(true);
+    try {
+      const response = await fetch(`/api/submissions/${params.id}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: replyMessage }),
+      });
+
+      if (response.ok) {
+        // Clear the reply input and refresh data
+        setReplyMessage('');
+        await fetchSubmission();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to add reply');
+      }
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      setError('Failed to add reply');
+    } finally {
+      setReplying(false);
     }
   };
 
@@ -148,6 +183,12 @@ export default function SubmissionDetailPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {/* Design Files */}
@@ -222,34 +263,65 @@ export default function SubmissionDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Client Feedback */}
+            {/* Client Feedback & Conversation */}
             <Card>
               <CardHeader>
-                <CardTitle>Client Feedback</CardTitle>
+                <CardTitle>Client Feedback & Conversation</CardTitle>
                 <CardDescription>
-                  Comments and feedback from the business owner
+                  Comments and feedback from the business owner - you can reply to continue the conversation
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {submission.comments.length > 0 ? (
                   <div className="space-y-4">
                     {submission.comments.map((comment) => (
-                      <div key={comment.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div 
+                        key={comment.id} 
+                        className={`rounded-lg p-4 ${
+                          comment.author.role === 'DESIGNER' 
+                            ? 'bg-green-50 border border-green-200 ml-8' 
+                            : 'bg-blue-50 border border-blue-200 mr-8'
+                        }`}
+                      >
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-blue-700">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            comment.author.role === 'DESIGNER' 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            <span className="text-sm font-medium">
                               {comment.author.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-blue-900">{comment.author.name}</span>
-                            <span className="text-xs text-blue-600 ml-2">({comment.author.role})</span>
+                            <span className={`text-sm font-medium ${
+                              comment.author.role === 'DESIGNER' 
+                                ? 'text-green-900' 
+                                : 'text-blue-900'
+                            }`}>
+                              {comment.author.name}
+                            </span>
+                            <span className={`text-xs ml-2 ${
+                              comment.author.role === 'DESIGNER' 
+                                ? 'text-green-600' 
+                                : 'text-blue-600'
+                            }`}>
+                              ({comment.author.role})
+                            </span>
                           </div>
-                          <span className="text-xs text-blue-500 ml-auto">
+                          <span className={`text-xs ml-auto ${
+                            comment.author.role === 'DESIGNER' 
+                              ? 'text-green-500' 
+                              : 'text-blue-500'
+                          }`}>
                             {formatDate(new Date(comment.createdAt))}
                           </span>
                         </div>
-                        <p className="text-blue-800 leading-relaxed">
+                        <p className={`leading-relaxed ${
+                          comment.author.role === 'DESIGNER' 
+                            ? 'text-green-800' 
+                            : 'text-blue-800'
+                        }`}>
                           {comment.message}
                         </p>
                       </div>
@@ -266,6 +338,34 @@ export default function SubmissionDetailPage() {
                     <p className="text-gray-600">The business owner hasn't provided any feedback yet.</p>
                   </div>
                 )}
+
+                {/* Reply Form */}
+                <div className="mt-6 border-t pt-6">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Reply to Client Feedback</h4>
+                  <div className="flex gap-3">
+                    <Input
+                      placeholder="Type your reply to the client..."
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleReply();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleReply}
+                      disabled={replying || !replyMessage.trim()}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {replying ? 'Sending...' : 'Send Reply'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Your reply will be visible to the business owner and can help clarify requirements or ask questions.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
