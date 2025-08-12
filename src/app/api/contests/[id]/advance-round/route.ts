@@ -52,14 +52,15 @@ export async function POST(
       return NextResponse.json({ error: 'Contest is already at the final round' }, { status: 400 });
     }
 
-    // Check if there are any accepted submissions in the current round
-    const currentRoundAcceptedSubmissions = contest.submissions.filter(
-      submission => submission.status === 'ACCEPTED' && submission.round === contest.round
+    // Check if there are any accepted submissions from any round
+    // This allows advancement to Round 3 for winner selection even if accepted designs are from previous rounds
+    const totalAcceptedSubmissions = contest.submissions.filter(
+      submission => submission.status === 'ACCEPTED'
     );
 
-    if (currentRoundAcceptedSubmissions.length === 0) {
+    if (totalAcceptedSubmissions.length === 0) {
       return NextResponse.json({ 
-        error: 'Cannot advance to next round without any accepted submissions in the current round' 
+        error: 'Cannot advance to next round without any accepted submissions' 
       }, { status: 400 });
     }
 
@@ -73,7 +74,7 @@ export async function POST(
     // Start a transaction to update contest and carry over accepted submissions
     const result = await prisma.$transaction(async (tx) => {
       // Count total accepted submissions across all rounds to get accurate count
-      const totalAcceptedSubmissions = await tx.submission.count({
+      const totalAcceptedCount = await tx.submission.count({
         where: {
           contestId: contest.id,
           status: 'ACCEPTED',
@@ -86,7 +87,7 @@ export async function POST(
         data: {
           round: newRound,
           status: newStatus,
-          acceptedCount: totalAcceptedSubmissions, // Use actual count from database
+          acceptedCount: totalAcceptedCount, // Use actual count from database
         },
         include: {
           _count: {
@@ -113,7 +114,7 @@ export async function POST(
     });
 
     return NextResponse.json({
-      message: `Contest advanced to ${getRoundName(newRound)}. ${currentRoundAcceptedSubmissions.length} accepted design(s) will continue to the next round.`,
+      message: `Contest advanced to ${getRoundName(newRound)}. ${totalAcceptedSubmissions.length} accepted design(s) will continue to the next round.`,
       contest: result,
     });
   } catch (error) {
