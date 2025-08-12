@@ -38,6 +38,7 @@ export default function ContestDetailPage() {
   const [contest, setContest] = useState<Contest | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role === 'DESIGNER') {
@@ -91,6 +92,34 @@ export default function ContestDetailPage() {
     }
   };
 
+  const handleAdvanceRound = async () => {
+    if (!confirm(`Are you sure you want to advance to ${getRoundName(contest!.round + 1)}? This will reset the accepted count and move all designers to the next round.`)) {
+      return;
+    }
+
+    setAdvancing(true);
+    try {
+      const response = await fetch(`/api/contests/${params.id}/advance-round`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Refresh contest data
+        await fetchContest();
+        alert(data.message);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to advance round');
+      }
+    } catch (error) {
+      console.error('Error advancing round:', error);
+      alert('An error occurred while advancing the round');
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -123,6 +152,9 @@ export default function ContestDetailPage() {
 
   // Check if contest can be cancelled
   const canCancel = contest.status === 'ACTIVE' && contest.round === 1 && contest.acceptedCount === 0;
+  
+  // Check if contest can advance to next round
+  const canAdvanceRound = contest.status === 'ACTIVE' && contest.round < 3 && contest.acceptedCount > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -158,6 +190,15 @@ export default function ContestDetailPage() {
                 <Link href={`/dashboard/contests/${contest.id}/review`}>
                   <Button variant="primary">Review Submissions</Button>
                 </Link>
+              )}
+              {canAdvanceRound && (
+                <Button 
+                  variant="secondary"
+                  onClick={handleAdvanceRound}
+                  disabled={advancing}
+                >
+                  {advancing ? 'Advancing...' : `Advance to ${getRoundName(contest.round + 1)}`}
+                </Button>
               )}
               {canCancel && (
                 <Button 
@@ -317,8 +358,22 @@ export default function ContestDetailPage() {
                   </div>
                   
                   <div className="text-sm text-gray-600">
-                    {contest.packageQuota - contest.acceptedCount} more design{contest.packageQuota - contest.acceptedCount !== 1 ? 's' : ''} needed
+                    {contest.acceptedCount === 0 ? (
+                      'No designs accepted yet'
+                    ) : contest.acceptedCount >= contest.packageQuota ? (
+                      'Target reached! You can advance to the next round or complete the contest.'
+                    ) : (
+                      `${contest.packageQuota - contest.acceptedCount} more design${contest.packageQuota - contest.acceptedCount !== 1 ? 's' : ''} needed for target`
+                    )}
                   </div>
+
+                  {contest.acceptedCount > 0 && contest.acceptedCount < contest.packageQuota && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-700">
+                        💡 You can advance to the next round now with {contest.acceptedCount} accepted design{contest.acceptedCount !== 1 ? 's' : ''}, or wait for more submissions.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -344,6 +399,23 @@ export default function ContestDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Round Advancement Rules */}
+            {contest.status === 'ACTIVE' && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader>
+                  <CardTitle className="text-blue-800">Round Advancement</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-blue-700 space-y-2">
+                    <p>• You can advance to the next round with any number of accepted designs</p>
+                    <p>• Advancing will reset the accepted count for the new round</p>
+                    <p>• All designers will be notified to submit for the next round</p>
+                    <p>• Round 3 automatically marks the contest as completed</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Cancellation Rules */}
             {contest.status === 'ACTIVE' && (
@@ -374,6 +446,16 @@ export default function ContestDetailPage() {
                         Review Submissions
                       </Button>
                     </Link>
+                  )}
+                  {canAdvanceRound && (
+                    <Button 
+                      variant="secondary"
+                      onClick={handleAdvanceRound}
+                      disabled={advancing}
+                      className="w-full"
+                    >
+                      {advancing ? 'Advancing...' : `Advance to ${getRoundName(contest.round + 1)}`}
+                    </Button>
                   )}
                   <Link href="/dashboard" className="block">
                     <Button variant="outline" className="w-full">
