@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all accepted submissions from user's contests
-    const acceptedSubmissions = await prisma.submission.findMany({
+    // Get only winning submissions from user's contests
+    const winningSubmissions = await prisma.submission.findMany({
       where: {
-        status: 'ACCEPTED',
+        status: 'WINNER', // Only show winning designs
         contest: {
           userId: session.user.id,
         },
@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
             type: true,
             width: true,
             height: true,
+            mimeType: true,
+            fileSize: true,
           },
         },
         contest: {
@@ -35,11 +37,13 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             platform: true,
+            round: true,
           },
         },
         designer: {
           select: {
             name: true,
+            email: true,
           },
         },
       },
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to match the expected format
-    const designs = acceptedSubmissions.map(submission => ({
+    const designs = winningSubmissions.map(submission => ({
       id: submission.id,
       submission: {
         id: submission.id,
@@ -63,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ designs });
   } catch (error) {
-    console.error('Error fetching accepted designs:', error);
+    console.error('Error fetching winning designs:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

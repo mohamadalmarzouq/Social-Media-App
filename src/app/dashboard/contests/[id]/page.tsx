@@ -436,6 +436,9 @@ export default function ContestDetailPage() {
                       <p className="text-sm text-blue-700">
                         💡 You can advance to the next round now with {contest.acceptedCount} accepted design{contest.acceptedCount !== 1 ? 's' : ''}, or wait for more submissions.
                       </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Note: Accepted designs will carry over to the next round.
+                      </p>
                     </div>
                   )}
                 </div>

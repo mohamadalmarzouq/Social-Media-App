@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
 
-interface AcceptedDesign {
+interface WinningDesign {
   id: string;
   submission: {
     id: string;
@@ -15,9 +15,11 @@ interface AcceptedDesign {
       id: string;
       title: string;
       platform: string;
+      round: number;
     };
     designer: {
       name: string;
+      email: string;
     };
     round: number;
     createdAt: string;
@@ -29,13 +31,15 @@ interface AcceptedDesign {
     type: string;
     width: number;
     height: number;
+    mimeType: string;
+    fileSize: number;
   }[];
 }
 
 export default function YourWorkPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [acceptedDesigns, setAcceptedDesigns] = useState<AcceptedDesign[]>([]);
+  const [winningDesigns, setWinningDesigns] = useState<WinningDesign[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,19 +49,19 @@ export default function YourWorkPage() {
     }
     
     if (status === 'authenticated') {
-      fetchAcceptedDesigns();
+      fetchWinningDesigns();
     }
   }, [session, status, router]);
 
-  const fetchAcceptedDesigns = async () => {
+  const fetchWinningDesigns = async () => {
     try {
       const response = await fetch('/api/work');
       if (response.ok) {
         const data = await response.json();
-        setAcceptedDesigns(data.designs);
+        setWinningDesigns(data.designs);
       }
     } catch (error) {
-      console.error('Error fetching accepted designs:', error);
+      console.error('Error fetching winning designs:', error);
     } finally {
       setLoading(false);
     }
@@ -92,15 +96,15 @@ export default function YourWorkPage() {
               ← Back to Dashboard
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Your Work</h1>
-              <p className="text-gray-600">All your accepted designs</p>
+              <h1 className="text-2xl font-bold text-gray-900">Your Winning Designs</h1>
+              <p className="text-gray-600">All your contest-winning designs</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {acceptedDesigns.length === 0 ? (
+        {winningDesigns.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <div className="text-gray-400 mb-4">
@@ -108,8 +112,8 @@ export default function YourWorkPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No accepted designs yet</h3>
-              <p className="text-gray-600 mb-4">Once you accept designs from contests, they&apos;ll appear here</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No winning designs yet</h3>
+              <p className="text-gray-600 mb-4">Once you complete contests and select winners, they&apos;ll appear here</p>
               <Button 
                 variant="primary"
                 onClick={() => router.push('/dashboard')}
@@ -120,7 +124,7 @@ export default function YourWorkPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {acceptedDesigns.map((design) => (
+            {winningDesigns.map((design) => (
               <Card key={design.id} className="overflow-hidden">
                 <div className="aspect-square bg-gray-100 relative">
                   {design.assets.length > 0 && design.assets[0].type === 'IMAGE' && (
@@ -147,13 +151,27 @@ export default function YourWorkPage() {
                 <CardHeader>
                   <CardTitle className="text-lg">{design.submission.contest.title}</CardTitle>
                   <CardDescription>
-                    By {design.submission.designer.name} • Round {design.submission.round}
+                    🏆 Winning Design by {design.submission.designer.name} • Round {design.submission.round}
+                    <br />
+                    <span className="text-xs text-gray-500">{design.submission.designer.email}</span>
                   </CardDescription>
                 </CardHeader>
                 
                 <CardContent>
                   <div className="text-sm text-gray-600 mb-4">
-                    Accepted: {formatDate(new Date(design.submission.createdAt))}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                        🏆 Winner
+                      </span>
+                      <span className="text-gray-500">
+                        Selected: {formatDate(new Date(design.submission.createdAt))}
+                      </span>
+                    </div>
+                    {design.assets.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        File: {design.assets[0].filename} ({Math.round(design.assets[0].fileSize / 1024)} KB)
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex gap-2">

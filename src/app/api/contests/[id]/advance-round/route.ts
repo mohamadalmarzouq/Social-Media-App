@@ -78,7 +78,7 @@ export async function POST(
         data: {
           round: newRound,
           status: newStatus,
-          acceptedCount: 0, // Reset accepted count for new round
+          acceptedCount: contest.acceptedCount, // Keep accumulated count - don't reset
         },
         include: {
           _count: {
