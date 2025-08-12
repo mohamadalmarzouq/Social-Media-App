@@ -143,13 +143,15 @@ export default function ContestDetailPage() {
       const response = await fetch(`/api/contests/${params.id}/submissions`);
       if (response.ok) {
         const data = await response.json();
-        const round3Accepted = data.submissions.filter(
-          (s: any) => s.round === 3 && s.status === 'ACCEPTED'
+        // Look for accepted submissions from ANY round, not just Round 3
+        // Since we don't create duplicate submissions when advancing rounds
+        const acceptedSubmissions = data.submissions.filter(
+          (s: any) => s.status === 'ACCEPTED'
         );
-        setRound3Submissions(round3Accepted);
+        setRound3Submissions(acceptedSubmissions);
       }
     } catch (error) {
-      console.error('Error fetching Round 3 submissions:', error);
+      console.error('Error fetching accepted submissions:', error);
     }
   };
 
@@ -492,13 +494,13 @@ export default function ContestDetailPage() {
                 <CardContent>
                   {round3Submissions.length === 0 ? (
                     <div className="text-center py-4">
-                      <p className="text-green-700 mb-3">No accepted designs in Round 3 yet.</p>
+                      <p className="text-green-700 mb-3">No accepted designs yet.</p>
                       <p className="text-sm text-green-600">Review submissions and accept designs to proceed with winner selection.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       <p className="text-sm text-green-700 mb-4">
-                        You have {round3Submissions.length} accepted design(s) in Round 3. 
+                        You have {round3Submissions.length} accepted design(s). 
                         Select the winner to complete your contest.
                       </p>
                       {round3Submissions.map((submission) => (
@@ -509,7 +511,7 @@ export default function ContestDetailPage() {
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">Design by {submission.designer?.name || 'Designer'}</p>
-                              <p className="text-sm text-gray-600">Round 3 Submission</p>
+                              <p className="text-sm text-gray-600">Round {submission.round} Submission</p>
                             </div>
                           </div>
                           <Button

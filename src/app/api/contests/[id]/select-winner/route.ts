@@ -30,7 +30,8 @@ export async function POST(
         submissions: {
           where: { 
             status: 'ACCEPTED',
-            round: 3
+            // Look for accepted submissions from ANY round, not just Round 3
+            // Since we don't create duplicate submissions when advancing rounds
           },
           select: { 
             id: true,
@@ -58,13 +59,13 @@ export async function POST(
       return NextResponse.json({ error: 'Winner can only be selected in Round 3' }, { status: 400 });
     }
 
-    // Check if the submission exists and is accepted in Round 3
+    // Check if the submission exists and is accepted
     const submission = contest.submissions.find(s => s.id === submissionId);
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found or not accepted in Round 3' }, { status: 404 });
+      return NextResponse.json({ error: 'Submission not found or not accepted' }, { status: 404 });
     }
 
-    // Start a transaction to select winner and potentially complete contest
+    // Start a transaction to select winner and complete contest
     const result = await prisma.$transaction(async (tx) => {
       // Mark the winning submission
       const winningSubmission = await tx.submission.update({
@@ -72,7 +73,8 @@ export async function POST(
         data: { status: 'WINNER' },
       });
 
-      // Count how many winners we now have
+      // For Package 1 (1 winner), always complete the contest
+      // For Package 2 (2 winners) and Package 3 (3 winners), check if we have enough
       const currentWinners = await tx.submission.count({
         where: {
           contestId: contest.id,
@@ -80,8 +82,13 @@ export async function POST(
         },
       });
 
-      // Check if we have enough winners to complete the contest
-      const hasEnoughWinners = currentWinners >= contest.winnersNeeded;
+      // Get contest details to check winners needed
+      const contestDetails = await tx.contest.findUnique({
+        where: { id: contest.id },
+        select: { winnersNeeded: true }
+      });
+
+      const hasEnoughWinners = contestDetails && currentWinners >= contestDetails.winnersNeeded;
       
       let updatedContest;
       if (hasEnoughWinners) {
@@ -90,50 +97,13 @@ export async function POST(
           where: { id: params.id },
           data: {
             status: 'COMPLETED',
-            winningSubmissionId: submissionId, // Keep the last selected winner as primary
-          },
-          include: {
-            _count: {
-              select: {
-                submissions: true,
-              },
-            },
-            brand: {
-              select: {
-                logoUrl: true,
-                colors: true,
-              },
-            },
-            winningSubmission: {
-              include: {
-                designer: {
-                  select: {
-                    name: true,
-                    email: true,
-                  },
-                },
-                assets: true,
-              },
-            },
+            winningSubmissionId: submissionId,
           },
         });
       } else {
         // Still need more winners - keep contest active
         updatedContest = await tx.contest.findUnique({
           where: { id: params.id },
-          include: {
-            _count: {
-              select: {
-                submissions: true,
-              },
-            },
-            brand: {
-              select: {
-                logoUrl: true,
-                colors: true,
-              },
-            },
-          },
         });
       }
 
@@ -142,7 +112,7 @@ export async function POST(
 
     const message = result.hasEnoughWinners 
       ? `Winner selected successfully! Contest completed with ${result.currentWinners} winner(s).`
-      : `Winner selected! You now have ${result.currentWinners}/${contest.winnersNeeded} winner(s). Select ${contest.winnersNeeded - result.currentWinners} more to complete the contest.`;
+      : `Winner selected! You now have ${result.currentWinners}/${contestWithDetails.winnersNeeded} winner(s). Select ${contestWithDetails.winnersNeeded - result.currentWinners} more to complete the contest.`;
 
     return NextResponse.json({
       message,

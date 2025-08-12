@@ -34,6 +34,10 @@ export async function GET(
     const submissions = await prisma.submission.findMany({
       where: {
         contestId: params.id,
+        // Only show submissions that have design files uploaded
+        assets: {
+          some: {} // At least one asset must exist
+        }
       },
       include: {
         designer: {

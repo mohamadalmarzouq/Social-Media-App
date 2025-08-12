@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
           round: contest.round,
         },
       },
+      include: {
+        assets: true,
+      },
     });
 
     if (existingSubmission) {
@@ -104,17 +107,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // IMPORTANT: Return the submission but note that files must be uploaded separately
+    // The submission is created with PENDING status and will remain pending until files are uploaded
     return NextResponse.json({
-      message: 'Submission created successfully',
-      submission: {
-        id: submission.id,
-        contestId: submission.contestId,
-        round: submission.round,
-        status: submission.status,
-        createdAt: submission.createdAt,
-        contest: submission.contest,
-        designer: submission.designer,
-      },
+      message: 'Submission created successfully. Please upload your design files to complete the submission.',
+      submission,
+      note: 'Design files must be uploaded separately using the file upload API. Your submission will remain pending until files are uploaded.',
     });
   } catch (error) {
     console.error('Error creating submission:', error);
