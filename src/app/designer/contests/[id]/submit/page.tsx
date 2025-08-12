@@ -89,8 +89,8 @@ export default function SubmitDesignPage() {
     setError('');
 
     try {
-      // Create submission first
-      const submissionResponse = await fetch('/api/submissions', {
+      // First, create a temporary submission to get an ID for file uploads
+      const tempSubmissionResponse = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,19 +98,21 @@ export default function SubmitDesignPage() {
         body: JSON.stringify({
           contestId: params.id,
           comment,
+          files: [], // Empty initially
         }),
       });
 
-      if (!submissionResponse.ok) {
-        const errorData = await submissionResponse.json();
+      if (!tempSubmissionResponse.ok) {
+        const errorData = await tempSubmissionResponse.json();
         throw new Error(errorData.error || 'Failed to create submission');
       }
 
-      const submissionData = await submissionResponse.json();
+      const submissionData = await tempSubmissionResponse.json();
       const submissionId = submissionData.submission.id;
 
-      // Upload files
-      const uploadPromises = files.map(async (file) => {
+      // Upload files and collect their data
+      const uploadedFiles = [];
+      for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('submissionId', submissionId);
@@ -122,13 +124,34 @@ export default function SubmitDesignPage() {
         });
 
         if (!uploadResponse.ok) {
+          // If any file upload fails, delete the submission and show error
+          await fetch(`/api/submissions/${submissionId}`, { method: 'DELETE' });
           throw new Error(`Failed to upload ${file.name}`);
         }
 
-        return uploadResponse.json();
+        const uploadData = await uploadResponse.json();
+        uploadedFiles.push({
+          id: uploadData.asset.id,
+          url: uploadData.asset.url,
+          filename: uploadData.asset.filename,
+          type: uploadData.asset.type,
+        });
+      }
+
+      // Now update the submission with the uploaded files data
+      const updateResponse = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: uploadedFiles,
+        }),
       });
 
-      await Promise.all(uploadPromises);
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update submission with files');
+      }
 
       // Redirect to contest details page
       router.push(`/designer/contests/${params.id}`);

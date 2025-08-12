@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = submissionSchema.parse(body);
-    const { contestId, comment } = validatedData;
+    const { contestId, comment, files } = validatedData; // Add files to validation
 
     // Verify the contest exists and is active
     const contest = await prisma.contest.findUnique({
@@ -96,6 +96,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Create assets for the uploaded files
+    if (files && files.length > 0) {
+      for (const file of files) {
+        await prisma.asset.create({
+          data: {
+            submissionId: submission.id,
+            url: file.url,
+            filename: file.filename,
+            type: file.type,
+            mimeType: file.type === 'IMAGE' ? 'image/jpeg' : 'video/mp4', // Default mime types
+            fileSize: 0, // Will be updated when file is actually processed
+            width: file.type === 'IMAGE' ? 1080 : undefined, // Default dimensions
+            height: file.type === 'IMAGE' ? 1080 : undefined,
+          },
+        });
+      }
+    }
+
     // If there's a comment, create it
     if (comment && comment.trim()) {
       await prisma.comment.create({
@@ -107,24 +125,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // IMPORTANT: Return the submission but note that files must be uploaded separately
-    // The submission is created with PENDING status and will remain pending until files are uploaded
+    // Return the complete submission with assets
     return NextResponse.json({
-      message: 'Submission created successfully. Please upload your design files to complete the submission.',
+      message: 'Submission created successfully with design files.',
       submission,
-      note: 'Design files must be uploaded separately using the file upload API. Your submission will remain pending until files are uploaded.',
     });
   } catch (error) {
     console.error('Error creating submission:', error);
-    
-    if (error instanceof Error && 'issues' in error) {
-      // Zod validation error
-      return NextResponse.json(
-        { error: 'Validation failed', issues: error.issues },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
