@@ -60,35 +60,38 @@ export async function POST(
       return NextResponse.json({ error: 'Contest quota already reached' }, { status: 400 });
     }
 
-    // Use a transaction to update submission and contest
-    const result = await prisma.$transaction(async (tx) => {
-      // Update submission status to ACCEPTED
-      const updatedSubmission = await tx.submission.update({
-        where: { id: params.id },
-        data: { status: 'ACCEPTED' },
-      });
+    // Update submission status to accepted
+    const updatedSubmission = await prisma.submission.update({
+      where: { id: params.id },
+      data: { status: 'ACCEPTED' },
+      include: {
+        contest: true,
+        designer: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
 
-      // Increment contest accepted count
-      const updatedContest = await tx.contest.update({
-        where: { id: submission.contest.id },
-        data: { acceptedCount: { increment: 1 } },
-      });
+    // Update the contest's accepted count to reflect the new accepted submission
+    const totalAcceptedSubmissions = await prisma.submission.count({
+      where: {
+        contestId: updatedSubmission.contestId,
+        status: 'ACCEPTED',
+      },
+    });
 
-      // Check if contest should be completed
-      if (updatedContest.acceptedCount >= updatedContest.packageQuota) {
-        await tx.contest.update({
-          where: { id: submission.contest.id },
-          data: { status: 'COMPLETED' },
-        });
-      }
-
-      return { updatedSubmission, updatedContest };
+    await prisma.contest.update({
+      where: { id: updatedSubmission.contestId },
+      data: { acceptedCount: totalAcceptedSubmissions },
     });
 
     return NextResponse.json({
       message: 'Submission accepted successfully',
-      submission: result.updatedSubmission,
-      contest: result.updatedContest,
+      submission: updatedSubmission,
+      contest: updatedSubmission.contest,
     });
   } catch (error) {
     console.error('Error accepting submission:', error);

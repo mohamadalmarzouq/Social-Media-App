@@ -105,13 +105,21 @@ export async function POST(request: NextRequest) {
         submissionId,
         url: `/api/files/${filename}`,
         filename: file.name,
-        type: type as 'IMAGE' | 'VIDEO',
+        type: type === 'IMAGE' ? 'IMAGE' : 'VIDEO', // Ensure correct type mapping
         mimeType: file.type,
         fileSize: file.size,
+        width: type === 'IMAGE' ? undefined : undefined, // Will be set later if needed
+        height: type === 'IMAGE' ? undefined : undefined, // Will be set later if needed
       },
     });
 
-    console.log('Asset created in database:', asset.id);
+    console.log('Asset created in database:', {
+      id: asset.id,
+      url: asset.url,
+      filename: asset.filename,
+      type: asset.type,
+      submissionId: asset.submissionId
+    });
 
     return NextResponse.json({
       message: 'File uploaded successfully',

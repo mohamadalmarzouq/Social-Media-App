@@ -72,13 +72,21 @@ export async function POST(
 
     // Start a transaction to update contest and carry over accepted submissions
     const result = await prisma.$transaction(async (tx) => {
-      // Update contest to next round
+      // Count total accepted submissions across all rounds to get accurate count
+      const totalAcceptedSubmissions = await tx.submission.count({
+        where: {
+          contestId: contest.id,
+          status: 'ACCEPTED',
+        },
+      });
+
+      // Update contest to next round with accurate accepted count
       const updatedContest = await tx.contest.update({
         where: { id: params.id },
         data: {
           round: newRound,
           status: newStatus,
-          acceptedCount: contest.acceptedCount, // Keep accumulated count - don't reset
+          acceptedCount: totalAcceptedSubmissions, // Use actual count from database
         },
         include: {
           _count: {
@@ -95,17 +103,29 @@ export async function POST(
         },
       });
 
-      // Carry over accepted submissions from previous round to new round
-      // This allows designers to continue working on accepted designs
-      for (const submission of currentRoundAcceptedSubmissions) {
-        await tx.submission.create({
-          data: {
-            contestId: contest.id,
-            designerId: submission.designerId,
-            round: newRound,
-            status: 'ACCEPTED', // Carry over the accepted status
-          },
-        });
+      // Check if we already have accepted submissions in the new round
+      const existingNewRoundAccepted = await tx.submission.findMany({
+        where: {
+          contestId: contest.id,
+          round: newRound,
+          status: 'ACCEPTED',
+        },
+      });
+
+      // Only create new accepted submissions if they don't already exist
+      if (existingNewRoundAccepted.length === 0) {
+        // Carry over accepted submissions from previous round to new round
+        // This allows designers to continue working on accepted designs
+        for (const submission of currentRoundAcceptedSubmissions) {
+          await tx.submission.create({
+            data: {
+              contestId: contest.id,
+              designerId: submission.designerId,
+              round: newRound,
+              status: 'ACCEPTED', // Carry over the accepted status
+            },
+          });
+        }
       }
 
       return updatedContest;

@@ -53,10 +53,32 @@ export async function POST(
       return NextResponse.json({ error: 'Submission is not pending' }, { status: 400 });
     }
 
-    // Update submission status to PASSED
+    // Update submission status to passed
     const updatedSubmission = await prisma.submission.update({
       where: { id: params.id },
       data: { status: 'PASSED' },
+      include: {
+        contest: true,
+        designer: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Update the contest's accepted count to reflect the current accepted submissions
+    const totalAcceptedSubmissions = await prisma.submission.count({
+      where: {
+        contestId: updatedSubmission.contestId,
+        status: 'ACCEPTED',
+      },
+    });
+
+    await prisma.contest.update({
+      where: { id: updatedSubmission.contestId },
+      data: { acceptedCount: totalAcceptedSubmissions },
     });
 
     return NextResponse.json({
