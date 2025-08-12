@@ -81,9 +81,10 @@ export async function POST(request: NextRequest) {
 
     console.log('Generated filename:', filename);
 
+    let uploadResult;
     try {
       // Save file using storage - use the correct method
-      const uploadResult = await storage.save(file, filename);
+      uploadResult = await storage.save(file, filename);
       console.log('File saved successfully to storage:', uploadResult);
     } catch (storageError) {
       console.error('Storage error:', storageError);
