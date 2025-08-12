@@ -64,7 +64,7 @@ export async function POST(
       return NextResponse.json({ error: 'Submission not found or not accepted in Round 3' }, { status: 404 });
     }
 
-    // Start a transaction to select winner and complete contest
+    // Start a transaction to select winner and potentially complete contest
     const result = await prisma.$transaction(async (tx) => {
       // Mark the winning submission
       const winningSubmission = await tx.submission.update({
@@ -72,46 +72,84 @@ export async function POST(
         data: { status: 'WINNER' },
       });
 
-      // Update contest to completed and set winning submission
-      const updatedContest = await tx.contest.update({
-        where: { id: params.id },
-        data: {
-          status: 'COMPLETED',
-          winningSubmissionId: submissionId,
-        },
-        include: {
-          _count: {
-            select: {
-              submissions: true,
-            },
-          },
-          brand: {
-            select: {
-              logoUrl: true,
-              colors: true,
-            },
-          },
-          winningSubmission: {
-            include: {
-              designer: {
-                select: {
-                  name: true,
-                  email: true,
-                },
-              },
-              assets: true,
-            },
-          },
+      // Count how many winners we now have
+      const currentWinners = await tx.submission.count({
+        where: {
+          contestId: contest.id,
+          status: 'WINNER',
         },
       });
 
-      return { contest: updatedContest, winningSubmission };
+      // Check if we have enough winners to complete the contest
+      const hasEnoughWinners = currentWinners >= contest.winnersNeeded;
+      
+      let updatedContest;
+      if (hasEnoughWinners) {
+        // Contest is complete - mark as completed
+        updatedContest = await tx.contest.update({
+          where: { id: params.id },
+          data: {
+            status: 'COMPLETED',
+            winningSubmissionId: submissionId, // Keep the last selected winner as primary
+          },
+          include: {
+            _count: {
+              select: {
+                submissions: true,
+              },
+            },
+            brand: {
+              select: {
+                logoUrl: true,
+                colors: true,
+              },
+            },
+            winningSubmission: {
+              include: {
+                designer: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+                assets: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Still need more winners - keep contest active
+        updatedContest = await tx.contest.findUnique({
+          where: { id: params.id },
+          include: {
+            _count: {
+              select: {
+                submissions: true,
+              },
+            },
+            brand: {
+              select: {
+                logoUrl: true,
+                colors: true,
+              },
+            },
+          },
+        });
+      }
+
+      return { contest: updatedContest, winningSubmission, hasEnoughWinners, currentWinners };
     });
 
+    const message = result.hasEnoughWinners 
+      ? `Winner selected successfully! Contest completed with ${result.currentWinners} winner(s).`
+      : `Winner selected! You now have ${result.currentWinners}/${contest.winnersNeeded} winner(s). Select ${contest.winnersNeeded - result.currentWinners} more to complete the contest.`;
+
     return NextResponse.json({
-      message: 'Winner selected successfully! Contest completed.',
+      message,
       contest: result.contest,
       winningSubmission: result.winningSubmission,
+      hasEnoughWinners: result.hasEnoughWinners,
+      currentWinners: result.currentWinners,
     });
   } catch (error) {
     console.error('Error selecting winner:', error);

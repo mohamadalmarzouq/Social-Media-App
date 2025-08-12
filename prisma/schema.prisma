@@ -96,7 +96,8 @@ model Contest {
   platform            Platform
   fileType            FileType?     // Type of files needed (Static Post, Animated Post)
   packageType         PackageType?  // Package type (Package 1, 2, or 3)
-  packageQuota        Int           // Number of final designs needed
+  packageQuota        Int           // Expected submissions per package (30, 60, 90)
+  winnersNeeded       Int           // Number of winners needed (1, 2, 3)
   expectedSubmissions Int           // Expected submissions per round
   status              ContestStatus @default(DRAFT)
   round               Int           @default(1)

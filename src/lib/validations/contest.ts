@@ -19,7 +19,8 @@ export const contestSchema = z.object({
   packageType: z.enum(['PACKAGE_1', 'PACKAGE_2', 'PACKAGE_3'], {
     required_error: 'Please select a package type',
   }),
-  packageQuota: z.number().min(1, 'Must need at least 1 design').max(50, 'Maximum 50 designs per contest'),
+  packageQuota: z.number().min(1, 'Must need at least 1 design').max(100, 'Maximum 100 designs per contest'),
+  winnersNeeded: z.number().min(1, 'Must need at least 1 winner').max(10, 'Maximum 10 winners per contest'),
   expectedSubmissions: z.number().min(5, 'Must expect at least 5 submissions').max(100, 'Maximum 100 expected submissions'),
   brandData: brandSchema,
 });

@@ -17,6 +17,7 @@ interface Contest {
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   round: number;
   packageQuota: number;
+  winnersNeeded: number;
   expectedSubmissions: number;
   acceptedCount: number;
   winningSubmissionId?: string;
@@ -313,12 +314,16 @@ export default function ContestDetailPage() {
                       <div className="text-gray-700">{getRoundName(contest.round)}</div>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-900">Designs Needed:</span>
+                      <span className="font-medium text-gray-900">Expected Submissions:</span>
                       <div className="text-gray-700">{contest.packageQuota}</div>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-900">Progress:</span>
-                      <div className="text-gray-700">{contest.acceptedCount}/{contest.packageQuota} accepted</div>
+                      <span className="font-medium text-gray-900">Winners Needed:</span>
+                      <div className="text-gray-700">{contest.winnersNeeded}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Accepted Submissions:</span>
+                      <div className="text-gray-700">{contest.acceptedCount} (proceeding to final rounds)</div>
                     </div>
                     <div>
                       <span className="font-medium text-gray-900">Total Submissions:</span>
@@ -410,34 +415,42 @@ export default function ContestDetailPage() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Accepted Designs</span>
-                      <span className="font-medium">{contest.acceptedCount}/{contest.packageQuota}</span>
+                      <span className="text-gray-600">Expected Submissions</span>
+                      <span className="font-medium">{contest.packageQuota}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${Math.min((contest._count.submissions / contest.packageQuota) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">Accepted Submissions</span>
+                      <span className="font-medium">{contest.acceptedCount}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full" 
-                        style={{ width: `${(contest.acceptedCount / contest.packageQuota) * 100}%` }}
+                        style={{ width: `${Math.min((contest.acceptedCount / contest.packageQuota) * 100, 100)}%` }}
                       />
                     </div>
                   </div>
                   
                   <div className="text-sm text-gray-600">
-                    {contest.acceptedCount === 0 ? (
-                      'No designs accepted yet'
-                    ) : contest.acceptedCount >= contest.packageQuota ? (
-                      'Target reached! You can advance to the next round or complete the contest.'
-                    ) : (
-                      `${contest.packageQuota - contest.acceptedCount} more design${contest.packageQuota - contest.acceptedCount !== 1 ? 's' : ''} needed for target`
-                    )}
+                    <p><strong>Package:</strong> Expect {contest.packageQuota} submissions, Get {contest.winnersNeeded} winner{contest.winnersNeeded !== 1 ? 's' : ''}</p>
+                    <p className="mt-1"><strong>Current Status:</strong> {contest._count.submissions} submissions received, {contest.acceptedCount} accepted</p>
                   </div>
 
-                  {contest.acceptedCount > 0 && contest.acceptedCount < contest.packageQuota && (
+                  {contest.acceptedCount > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-sm text-blue-700">
-                        💡 You can advance to the next round now with {contest.acceptedCount} accepted design{contest.acceptedCount !== 1 ? 's' : ''}, or wait for more submissions.
+                        💡 You can advance to the next round now with {contest.acceptedCount} accepted submission{contest.acceptedCount !== 1 ? 's' : ''}, or wait for more submissions.
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
-                        Note: Accepted designs will carry over to the next round.
+                        Note: Accepted submissions will carry over to the next round.
                       </p>
                     </div>
                   )}
@@ -555,10 +568,11 @@ export default function ContestDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-blue-700 space-y-2">
-                    <p>• You can advance to the next round with any number of accepted designs</p>
-                    <p>• Accepted designs automatically carry over to the next round</p>
-                    <p>• Designers can continue working on accepted designs in subsequent rounds</p>
-                    <p>• Round 3 is for final winner selection to complete the contest</p>
+                    <p>• You can advance to the next round with any number of accepted submissions</p>
+                    <p>• Accepted submissions automatically carry over to the next round</p>
+                    <p>• Designers can continue working on accepted submissions in subsequent rounds</p>
+                    <p>• Round 3 is for final winner selection (you need {contest.winnersNeeded} winner{contest.winnersNeeded !== 1 ? 's' : ''})</p>
+                    <p>• Package: Expect {contest.packageQuota} submissions, Get {contest.winnersNeeded} winner{contest.winnersNeeded !== 1 ? 's' : ''}</p>
                   </div>
                 </CardContent>
               </Card>

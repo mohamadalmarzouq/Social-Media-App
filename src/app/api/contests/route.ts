@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         fileType: contestData.fileType,
         packageType: contestData.packageType,
         packageQuota: contestData.packageQuota,
+        winnersNeeded: contestData.winnersNeeded,
         expectedSubmissions: contestData.expectedSubmissions,
         status: 'ACTIVE',
       },

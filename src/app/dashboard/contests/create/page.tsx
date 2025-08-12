@@ -30,7 +30,8 @@ export default function CreateContestPage() {
       platform: 'LOGO',
       fileType: 'STATIC_POST',
       packageType: 'PACKAGE_1',
-      packageQuota: 1,
+      packageQuota: 30,
+      winnersNeeded: 1,
       expectedSubmissions: 30,
       brandData: {
         colors: [],
@@ -80,19 +81,22 @@ export default function CreateContestPage() {
   const handlePackageTypeChange = (packageType: 'PACKAGE_1' | 'PACKAGE_2' | 'PACKAGE_3') => {
     setValue('packageType', packageType);
     
-    // Update expected submissions and package quota based on package type
+    // Update expected submissions and winners needed based on package type
     switch (packageType) {
       case 'PACKAGE_1':
         setValue('expectedSubmissions', 30);
-        setValue('packageQuota', 1);
+        setValue('packageQuota', 30); // Expect 30 submissions
+        setValue('winnersNeeded', 1); // Get 1 winner
         break;
       case 'PACKAGE_2':
         setValue('expectedSubmissions', 60);
-        setValue('packageQuota', 2);
+        setValue('packageQuota', 60); // Expect 60 submissions
+        setValue('winnersNeeded', 2); // Get 2 winners
         break;
       case 'PACKAGE_3':
         setValue('expectedSubmissions', 90);
-        setValue('packageQuota', 3);
+        setValue('packageQuota', 90); // Expect 90 submissions
+        setValue('winnersNeeded', 3); // Get 3 winners
         break;
     }
   };
