@@ -29,7 +29,8 @@ export async function POST(
           select: { 
             id: true,
             round: true,
-            status: true
+            status: true,
+            designerId: true
           }
         }
       }
@@ -66,36 +67,53 @@ export async function POST(
     const newRound = contest.round + 1;
     let newStatus = contest.status;
 
-    // If advancing to round 3, mark as completed
-    if (newRound === 3) {
-      newStatus = 'COMPLETED';
-    }
+    // Keep status as ACTIVE even for Round 3 - user needs to select winner
+    // Status will change to COMPLETED only when a winner is selected
 
-    const updatedContest = await prisma.contest.update({
-      where: { id: params.id },
-      data: {
-        round: newRound,
-        status: newStatus,
-        acceptedCount: 0, // Reset accepted count for new round
-      },
-      include: {
-        _count: {
-          select: {
-            submissions: true,
+    // Start a transaction to update contest and carry over accepted submissions
+    const result = await prisma.$transaction(async (tx) => {
+      // Update contest to next round
+      const updatedContest = await tx.contest.update({
+        where: { id: params.id },
+        data: {
+          round: newRound,
+          status: newStatus,
+          acceptedCount: 0, // Reset accepted count for new round
+        },
+        include: {
+          _count: {
+            select: {
+              submissions: true,
+            },
+          },
+          brand: {
+            select: {
+              logoUrl: true,
+              colors: true,
+            },
           },
         },
-        brand: {
-          select: {
-            logoUrl: true,
-            colors: true,
+      });
+
+      // Carry over accepted submissions from previous round to new round
+      // This allows designers to continue working on accepted designs
+      for (const submission of currentRoundAcceptedSubmissions) {
+        await tx.submission.create({
+          data: {
+            contestId: contest.id,
+            designerId: submission.designerId,
+            round: newRound,
+            status: 'ACCEPTED', // Carry over the accepted status
           },
-        },
-      },
+        });
+      }
+
+      return updatedContest;
     });
 
     return NextResponse.json({
-      message: `Contest advanced to ${getRoundName(newRound)}`,
-      contest: updatedContest,
+      message: `Contest advanced to ${getRoundName(newRound)}. ${currentRoundAcceptedSubmissions.length} accepted design(s) carried over to the next round.`,
+      contest: result,
     });
   } catch (error) {
     console.error('Error advancing contest round:', error);
@@ -113,7 +131,7 @@ function getRoundName(round: number): string {
     case 2:
       return 'Round 2';
     case 3:
-      return 'Round 3';
+      return 'Round 3 (Final Selection)';
     default:
       return `Round ${round}`;
   }

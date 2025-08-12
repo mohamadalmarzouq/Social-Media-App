@@ -13,12 +13,13 @@ interface Contest {
   id: string;
   title: string;
   description: string;
-  platform: 'INSTAGRAM' | 'TIKTOK';
+  platform: 'LOGO' | 'INSTAGRAM' | 'TIKTOK';
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   round: number;
   packageQuota: number;
   expectedSubmissions: number;
   acceptedCount: number;
+  winningSubmissionId?: string;
   createdAt: string;
   brand: {
     logoUrl: string | null;
@@ -28,6 +29,14 @@ interface Contest {
   };
   _count: {
     submissions: number;
+  };
+  winningSubmission?: {
+    id: string;
+    designer: {
+      name: string;
+      email: string;
+    };
+    assets: any[];
   };
 }
 
@@ -39,6 +48,8 @@ export default function ContestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [selectingWinner, setSelectingWinner] = useState(false);
+  const [round3Submissions, setRound3Submissions] = useState<any[]>([]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role === 'DESIGNER') {
@@ -50,6 +61,12 @@ export default function ContestDetailPage() {
       fetchContest();
     }
   }, [session, status, router, params.id]);
+
+  useEffect(() => {
+    if (contest && contest.round === 3 && contest.status === 'ACTIVE') {
+      fetchRound3Submissions();
+    }
+  }, [contest]);
 
   const fetchContest = async () => {
     try {
@@ -117,6 +134,52 @@ export default function ContestDetailPage() {
       alert('An error occurred while advancing the round');
     } finally {
       setAdvancing(false);
+    }
+  };
+
+  const fetchRound3Submissions = async () => {
+    try {
+      const response = await fetch(`/api/contests/${params.id}/submissions`);
+      if (response.ok) {
+        const data = await response.json();
+        const round3Accepted = data.submissions.filter(
+          (s: any) => s.round === 3 && s.status === 'ACCEPTED'
+        );
+        setRound3Submissions(round3Accepted);
+      }
+    } catch (error) {
+      console.error('Error fetching Round 3 submissions:', error);
+    }
+  };
+
+  const handleSelectWinner = async (submissionId: string) => {
+    if (!confirm('Are you sure you want to select this design as the winner? This will complete the contest and cannot be undone.')) {
+      return;
+    }
+
+    setSelectingWinner(true);
+    try {
+      const response = await fetch(`/api/contests/${params.id}/select-winner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ submissionId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await fetchContest();
+        alert(data.message);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to select winner');
+      }
+    } catch (error) {
+      console.error('Error selecting winner:', error);
+      alert('An error occurred while selecting the winner');
+    } finally {
+      setSelectingWinner(false);
     }
   };
 
@@ -240,8 +303,9 @@ export default function ContestDetailPage() {
                     <div>
                       <span className="font-medium text-gray-900">Platform:</span>
                       <div className="text-gray-700">
-                        {contest.platform} 
-                        {contest.platform === 'INSTAGRAM' ? ' (1080×1080)' : ' (1080×1920)'}
+                        {contest.platform === 'LOGO' ? 'Logo Design' :
+                         contest.platform === 'INSTAGRAM' ? 'Instagram (1080×1080)' : 
+                         'TikTok (1080×1920)'}
                       </div>
                     </div>
                     <div>
@@ -400,6 +464,86 @@ export default function ContestDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Winner Selection - Only show in Round 3 */}
+            {contest.round === 3 && contest.status === 'ACTIVE' && (
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader>
+                  <CardTitle className="text-green-800">🏆 Select Winner</CardTitle>
+                  <CardDescription className="text-green-700">
+                    Choose the winning design to complete your contest
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {round3Submissions.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-green-700 mb-3">No accepted designs in Round 3 yet.</p>
+                      <p className="text-sm text-green-600">Review submissions and accept designs to proceed with winner selection.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-green-700 mb-4">
+                        You have {round3Submissions.length} accepted design(s) in Round 3. 
+                        Select the winner to complete your contest.
+                      </p>
+                      {round3Submissions.map((submission) => (
+                        <div key={submission.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                              <span className="text-green-600 font-medium">D</span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Design by {submission.designer?.name || 'Designer'}</p>
+                              <p className="text-sm text-gray-600">Round 3 Submission</p>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleSelectWinner(submission.id)}
+                            disabled={selectingWinner}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {selectingWinner ? 'Selecting...' : 'Select as Winner'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Winning Design Display - Show when contest is completed */}
+            {contest.status === 'COMPLETED' && contest.winningSubmission && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardHeader>
+                  <CardTitle className="text-yellow-800">🏆 Winning Design</CardTitle>
+                  <CardDescription className="text-yellow-700">
+                    Congratulations! Your contest has been completed.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-yellow-200">
+                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <span className="text-yellow-600 font-medium text-lg">👑</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          Winner: {contest.winningSubmission.designer.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {contest.winningSubmission.designer.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-yellow-700">
+                      <p>This design has been saved to your portal and the contest is now complete.</p>
+                      <p className="mt-2">You can view the full design details in your submissions review.</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Round Advancement Rules */}
             {contest.status === 'ACTIVE' && (
               <Card className="border-blue-200 bg-blue-50">
@@ -409,9 +553,9 @@ export default function ContestDetailPage() {
                 <CardContent>
                   <div className="text-sm text-blue-700 space-y-2">
                     <p>• You can advance to the next round with any number of accepted designs</p>
-                    <p>• Advancing will reset the accepted count for the new round</p>
-                    <p>• All designers will be notified to submit for the next round</p>
-                    <p>• Round 3 automatically marks the contest as completed</p>
+                    <p>• Accepted designs automatically carry over to the next round</p>
+                    <p>• Designers can continue working on accepted designs in subsequent rounds</p>
+                    <p>• Round 3 is for final winner selection to complete the contest</p>
                   </div>
                 </CardContent>
               </Card>

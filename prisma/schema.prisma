@@ -43,6 +43,7 @@ enum SubmissionStatus {
   PENDING
   ACCEPTED
   PASSED
+  WINNER
 }
 
 enum AssetType {
@@ -100,6 +101,7 @@ model Contest {
   status              ContestStatus @default(DRAFT)
   round               Int           @default(1)
   acceptedCount       Int           @default(0) // Track accepted designs
+  winningSubmissionId String?       // ID of the winning submission
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -107,6 +109,7 @@ model Contest {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   brand       Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
   submissions Submission[]
+  winningSubmission Submission? @relation("WinningSubmission", fields: [winningSubmissionId], references: [id])
 
   @@map("contests")
 }
@@ -125,6 +128,7 @@ model Submission {
   designer User      @relation(fields: [designerId], references: [id], onDelete: Cascade)
   assets   Asset[]
   comments Comment[]
+  winningFor Contest[] @relation("WinningSubmission")
 
   @@unique([contestId, designerId, round])
   @@map("submissions")
