@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { syncContestAcceptedCount } from '@/lib/utils';
 
 export async function POST(
   request: NextRequest,
@@ -9,7 +10,6 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -19,8 +19,6 @@ export async function POST(
     }
 
     const params = await context.params;
-    
-    // Get the submission with contest details
     const submission = await prisma.submission.findUnique({
       where: { id: params.id },
       include: {
@@ -28,9 +26,13 @@ export async function POST(
           select: {
             id: true,
             userId: true,
-            packageQuota: true,
-            acceptedCount: true,
-            status: true,
+            title: true,
+          },
+        },
+        designer: {
+          select: {
+            name: true,
+            email: true,
           },
         },
       },
@@ -40,24 +42,8 @@ export async function POST(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
-    // Verify the contest belongs to this user
     if (submission.contest.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // Check if contest is still active
-    if (submission.contest.status !== 'ACTIVE') {
-      return NextResponse.json({ error: 'Contest is not active' }, { status: 400 });
-    }
-
-    // Check if submission is pending
-    if (submission.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Submission is not pending' }, { status: 400 });
-    }
-
-    // Check if contest quota is already reached
-    if (submission.contest.acceptedCount >= submission.contest.packageQuota) {
-      return NextResponse.json({ error: 'Contest quota already reached' }, { status: 400 });
     }
 
     // Update submission status to accepted
@@ -75,23 +61,13 @@ export async function POST(
       },
     });
 
-    // Update the contest's accepted count to reflect the new accepted submission
-    const totalAcceptedSubmissions = await prisma.submission.count({
-      where: {
-        contestId: updatedSubmission.contestId,
-        status: 'ACCEPTED',
-      },
-    });
-
-    await prisma.contest.update({
-      where: { id: updatedSubmission.contestId },
-      data: { acceptedCount: totalAcceptedSubmissions },
-    });
+    // Sync the contest's accepted count to ensure accuracy
+    const newAcceptedCount = await syncContestAcceptedCount(updatedSubmission.contestId);
 
     return NextResponse.json({
       message: 'Submission accepted successfully',
       submission: updatedSubmission,
-      contest: updatedSubmission.contest,
+      newAcceptedCount,
     });
   } catch (error) {
     console.error('Error accepting submission:', error);

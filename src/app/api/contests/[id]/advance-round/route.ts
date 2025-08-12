@@ -103,36 +103,17 @@ export async function POST(
         },
       });
 
-      // Check if we already have accepted submissions in the new round
-      const existingNewRoundAccepted = await tx.submission.findMany({
-        where: {
-          contestId: contest.id,
-          round: newRound,
-          status: 'ACCEPTED',
-        },
-      });
-
-      // Only create new accepted submissions if they don't already exist
-      if (existingNewRoundAccepted.length === 0) {
-        // Carry over accepted submissions from previous round to new round
-        // This allows designers to continue working on accepted designs
-        for (const submission of currentRoundAcceptedSubmissions) {
-          await tx.submission.create({
-            data: {
-              contestId: contest.id,
-              designerId: submission.designerId,
-              round: newRound,
-              status: 'ACCEPTED', // Carry over the accepted status
-            },
-          });
-        }
-      }
+      // IMPORTANT: We do NOT create new submissions in the new round
+      // Instead, we just advance the contest round
+      // The accepted submissions from previous rounds remain as-is
+      // Designers can continue working on their existing accepted submissions
+      // This prevents the accepted count from doubling
 
       return updatedContest;
     });
 
     return NextResponse.json({
-      message: `Contest advanced to ${getRoundName(newRound)}. ${currentRoundAcceptedSubmissions.length} accepted design(s) carried over to the next round.`,
+      message: `Contest advanced to ${getRoundName(newRound)}. ${currentRoundAcceptedSubmissions.length} accepted design(s) will continue to the next round.`,
       contest: result,
     });
   } catch (error) {

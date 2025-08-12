@@ -1,8 +1,49 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
+}
+
+export function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+export function getRoundName(round: number): string {
+  switch (round) {
+    case 1:
+      return 'Round 1';
+    case 2:
+      return 'Round 2';
+    case 3:
+      return 'Round 3 (Final Selection)';
+    default:
+      return `Round ${round}`;
+  }
+}
+
+export async function syncContestAcceptedCount(contestId: string): Promise<number> {
+  const { prisma } = await import('@/lib/prisma');
+  
+  // Count actual accepted submissions from database
+  const totalAcceptedSubmissions = await prisma.submission.count({
+    where: {
+      contestId: contestId,
+      status: 'ACCEPTED',
+    },
+  });
+
+  // Update contest with accurate count
+  await prisma.contest.update({
+    where: { id: contestId },
+    data: { acceptedCount: totalAcceptedSubmissions },
+  });
+
+  return totalAcceptedSubmissions;
 }
 
 export function formatFileSize(bytes: number): string {
@@ -36,27 +77,4 @@ export function validateImageDimensions(platform: 'INSTAGRAM' | 'TIKTOK', width:
     return width === 1080 && height === 1920;
   }
   return false;
-}
-
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-export function getRoundName(round: number): string {
-  switch (round) {
-    case 1:
-      return 'Initial Submissions';
-    case 2:
-      return 'Refinement';
-    case 3:
-      return 'Final';
-    default:
-      return `Round ${round}`;
-  }
 }

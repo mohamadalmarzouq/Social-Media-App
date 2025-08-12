@@ -81,16 +81,10 @@ export async function POST(request: NextRequest) {
 
     console.log('Generated filename:', filename);
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    console.log('File converted to buffer, size:', buffer.length);
-
     try {
-      // Save file using storage
-      await storage.saveFile(filename, buffer);
-      console.log('File saved successfully to storage');
+      // Save file using storage - use the correct method
+      const uploadResult = await storage.save(file, filename);
+      console.log('File saved successfully to storage:', uploadResult);
     } catch (storageError) {
       console.error('Storage error:', storageError);
       return NextResponse.json({ 
@@ -99,11 +93,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Create asset record in database
+    // Create asset record in database using the storage result
     const asset = await prisma.asset.create({
       data: {
         submissionId,
-        url: `/api/files/${filename}`,
+        url: uploadResult.url, // Use the URL from storage result
         filename: file.name,
         type: type === 'IMAGE' ? 'IMAGE' : 'VIDEO', // Ensure correct type mapping
         mimeType: file.type,
