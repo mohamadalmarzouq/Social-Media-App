@@ -22,8 +22,15 @@ export async function POST(
       where: { id: params.id },
       include: {
         submissions: {
-          where: { status: 'ACCEPTED' },
-          select: { id: true }
+          where: { 
+            status: 'ACCEPTED',
+            round: undefined // We'll filter this in the code
+          },
+          select: { 
+            id: true,
+            round: true,
+            status: true
+          }
         }
       }
     });
@@ -46,7 +53,7 @@ export async function POST(
 
     // Check if there are any accepted submissions in the current round
     const currentRoundAcceptedSubmissions = contest.submissions.filter(
-      submission => submission.status === 'ACCEPTED'
+      submission => submission.status === 'ACCEPTED' && submission.round === contest.round
     );
 
     if (currentRoundAcceptedSubmissions.length === 0) {
