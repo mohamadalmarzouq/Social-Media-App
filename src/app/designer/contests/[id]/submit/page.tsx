@@ -13,13 +13,14 @@ interface Contest {
   id: string;
   title: string;
   description: string;
-  platform: 'INSTAGRAM' | 'TIKTOK';
+  platform: 'LOGO' | 'INSTAGRAM' | 'TIKTOK';
   status: string;
   round: number;
   packageQuota: number;
   expectedSubmissions: number;
   acceptedCount: number;
   createdAt: string;
+  logoFileTypes?: string[];
   user: {
     name: string;
   };
@@ -83,6 +84,40 @@ export default function SubmitDesignPage() {
     if (files.length === 0) {
       setError('Please select at least one design file');
       return;
+    }
+
+    // For logo contests, validate that all required file types are covered
+    if (contest && contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0) {
+      // Check if the number of files matches the required file types
+      if (files.length < contest.logoFileTypes.length) {
+        setError(`For logo contests, you need to provide ${contest.logoFileTypes.length} files covering all required formats: ${contest.logoFileTypes.join(', ')}`);
+        return;
+      }
+      
+      // Additional validation: Check file extensions match required types
+      const fileExtensions = files.map(file => {
+        const ext = file.name.split('.').pop()?.toUpperCase();
+        // Map common extensions to file types
+        const extensionMap: { [key: string]: string } = {
+          'AI': 'AI',
+          'PSD': 'PSD', 
+          'EPS': 'EPS',
+          'PDF': 'PDF',
+          'PNG': 'PNG',
+          'JPG': 'JPG',
+          'JPEG': 'JPG'
+        };
+        return extensionMap[ext || ''] || ext;
+      });
+      
+      const missingTypes = contest.logoFileTypes.filter(type => 
+        !fileExtensions.includes(type)
+      );
+      
+      if (missingTypes.length > 0) {
+        setError(`Missing required file types: ${missingTypes.join(', ')}. Please ensure you provide files in all required formats.`);
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -302,16 +337,40 @@ export default function SubmitDesignPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Design Files *
                     </label>
+                    
+                    {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                        <h4 className="text-sm font-medium text-blue-900 mb-2">Required File Types for Logo Contest:</h4>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {contest.logoFileTypes.map((fileType, index) => (
+                            <span 
+                              key={index} 
+                              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                            >
+                              {fileType}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-sm text-blue-700">
+                          Please provide <strong>{contest.logoFileTypes.length} file(s)</strong> covering all the required formats above. 
+                          Each file should be the same logo design but in the specified format.
+                        </p>
+                      </div>
+                    )}
+                    
                     <Input
                       type="file"
                       multiple
-                      accept="image/*,video/*"
+                      accept="image/*,video/*,.ai,.psd,.eps,.pdf"
                       onChange={handleFileChange}
                       className="cursor-pointer"
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Supported formats: JPG, PNG, GIF, MP4, MOV. Max 5 files.
+                      {contest.platform === 'LOGO' 
+                        ? `Supported formats: AI, PSD, EPS, PDF, PNG, JPG. Max ${contest.logoFileTypes?.length || 5} files.`
+                        : 'Supported formats: JPG, PNG, GIF, MP4, MOV. Max 5 files.'
+                      }
                     </p>
                     {files.length > 0 && (
                       <div className="mt-2">
@@ -321,6 +380,39 @@ export default function SubmitDesignPage() {
                             <li key={index}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
                           ))}
                         </ul>
+                        
+                        {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                          <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                            <p className="text-sm font-medium text-gray-700 mb-2">File Type Coverage:</p>
+                            <div className="space-y-2">
+                              {contest.logoFileTypes.map((requiredType) => {
+                                const hasFile = files.some(file => {
+                                  const ext = file.name.split('.').pop()?.toUpperCase();
+                                  const extensionMap: { [key: string]: string } = {
+                                    'AI': 'AI', 'PSD': 'PSD', 'EPS': 'EPS', 'PDF': 'PDF', 
+                                    'PNG': 'PNG', 'JPG': 'JPG', 'JPEG': 'JPG'
+                                  };
+                                  return extensionMap[ext || ''] === requiredType;
+                                });
+                                
+                                return (
+                                  <div key={requiredType} className="flex items-center gap-2">
+                                    <span className={`w-4 h-4 rounded-full ${hasFile ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    <span className={`text-sm ${hasFile ? 'text-green-700' : 'text-red-700'}`}>
+                                      {requiredType} {hasFile ? '✓' : '✗'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2">
+                              {files.length >= contest.logoFileTypes.length 
+                                ? 'All required file types covered!'
+                                : `Need ${contest.logoFileTypes.length - files.length} more file(s)`
+                              }
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -341,7 +433,14 @@ export default function SubmitDesignPage() {
                   <div className="flex gap-3">
                     <Button
                       type="submit"
-                      disabled={submitting || files.length === 0}
+                      disabled={
+                        submitting || 
+                        files.length === 0 || 
+                        (contest.platform === 'LOGO' && 
+                         contest.logoFileTypes && 
+                         contest.logoFileTypes.length > 0 && 
+                         files.length < contest.logoFileTypes.length)
+                      }
                       className="flex-1"
                     >
                       {submitting ? 'Submitting...' : 'Submit Design'}
