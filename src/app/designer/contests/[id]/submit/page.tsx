@@ -34,6 +34,8 @@ interface Contest {
     id: string;
     round: number;
     status: 'PENDING' | 'ACCEPTED' | 'PASSED' | 'WINNER';
+    modificationsAllowed?: boolean;
+    modificationRequestedAt?: string;
   } | null;
 }
 
@@ -134,6 +136,9 @@ export default function SubmitDesignPage() {
     setError('');
 
     try {
+      // Check if this is a modification submission
+      const isModification = contest?.userSubmission?.modificationsAllowed;
+      
       // First, create a temporary submission to get an ID for file uploads
       const tempSubmissionResponse = await fetch('/api/submissions', {
         method: 'POST',
@@ -144,6 +149,7 @@ export default function SubmitDesignPage() {
           contestId: params.id,
           comment,
           files: [], // Empty initially
+          isModification: isModification || false,
         }),
       });
 
@@ -330,12 +336,42 @@ export default function SubmitDesignPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Submit Your Design</CardTitle>
+                <CardTitle>
+                  {contest.userSubmission?.modificationsAllowed ? 'Submit Additional Files' : 'Submit Your Design'}
+                </CardTitle>
                 <CardDescription>
-                  Upload your design files and add any comments for the client
+                  {contest.userSubmission?.modificationsAllowed 
+                    ? 'Upload additional files addressing the client feedback while keeping your accepted submission'
+                    : 'Upload your design files and add any comments for the client'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Modification Notice */}
+                {contest.userSubmission?.modificationsAllowed && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900 mb-2">🎯 Modification Requested by Client</h4>
+                        <p className="text-sm text-blue-800 mb-2">
+                          The client has requested additional files or modifications to your <strong>ACCEPTED</strong> submission. 
+                          You can now provide additional files based on their feedback.
+                        </p>
+                        <div className="text-xs text-blue-700 space-y-1">
+                          <p>• <strong>Current Status:</strong> Your original submission remains accepted</p>
+                          <p>• <strong>What to do:</strong> Upload additional files addressing the client's feedback</p>
+                          <p>• <strong>When requested:</strong> {contest.userSubmission.modificationRequestedAt ? new Date(contest.userSubmission.modificationRequestedAt).toLocaleDateString() : 'Recently'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {error && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
@@ -486,7 +522,9 @@ export default function SubmitDesignPage() {
                     >
                       {submitting 
                         ? 'Submitting...' 
-                        : 'Submit Design'
+                        : contest.userSubmission?.modificationsAllowed 
+                          ? 'Submit Additional Files'
+                          : 'Submit Design'
                       }
                     </Button>
                     <Button

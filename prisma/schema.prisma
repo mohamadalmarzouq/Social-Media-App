@@ -73,6 +73,8 @@ model Submission {
   status                SubmissionStatus @default(PENDING)
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
+  modificationsAllowed  Boolean          @default(false)
+  modificationRequestedAt DateTime?
   assets                Asset[]
   comments              Comment[]
   winningFor            Contest[]        @relation("WinningSubmission")
@@ -145,6 +147,7 @@ enum SubmissionStatus {
   ACCEPTED
   PASSED
   WINNER
+  MODIFICATION
 }
 
 enum AssetType {

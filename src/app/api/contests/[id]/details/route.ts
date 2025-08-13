@@ -59,6 +59,8 @@ export async function GET(
             id: true,
             round: true,
             status: true,
+            modificationsAllowed: true,
+            modificationRequestedAt: true,
           },
           orderBy: {
             round: 'desc',
