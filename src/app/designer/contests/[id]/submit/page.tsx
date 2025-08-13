@@ -66,6 +66,8 @@ export default function SubmitDesignPage() {
       const response = await fetch(`/api/contests/${params.id}/details`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Contest data received:', data); // Debug log
+        console.log('User submission:', data.contest.userSubmission); // Debug log
         setContest(data.contest);
       } else {
         setError('Failed to fetch contest details');
@@ -368,6 +370,19 @@ export default function SubmitDesignPage() {
                           <p>• <strong>When requested:</strong> {contest.userSubmission.modificationRequestedAt ? new Date(contest.userSubmission.modificationRequestedAt).toLocaleDateString() : 'Recently'}</p>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Debug Information */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <h4 className="text-sm font-medium text-yellow-900 mb-2">🔍 Debug Info (Development Only)</h4>
+                    <div className="text-xs text-yellow-800 space-y-1">
+                      <p><strong>Submission Status:</strong> {contest.userSubmission?.status || 'None'}</p>
+                      <p><strong>Modifications Allowed:</strong> {contest.userSubmission?.modificationsAllowed ? 'Yes' : 'No'}</p>
+                      <p><strong>Modification Requested At:</strong> {contest.userSubmission?.modificationRequestedAt || 'Not set'}</p>
+                      <p><strong>Has User Submission:</strong> {contest.userSubmission ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 )}
