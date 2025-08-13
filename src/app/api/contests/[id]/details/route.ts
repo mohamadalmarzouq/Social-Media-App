@@ -78,8 +78,9 @@ export async function GET(
       contestWithStatus = {
         ...contest,
         userSubmission: contest.submissions.length > 0 ? contest.submissions[0] : null,
-        submissions: undefined,
       };
+      // Remove the submissions array from the response
+      delete (contestWithStatus as any).submissions;
     }
 
     return NextResponse.json({ contest: contestWithStatus });

@@ -30,6 +30,11 @@ interface Contest {
     fonts: string[];
     description: string | null;
   };
+  userSubmission?: {
+    id: string;
+    round: number;
+    status: 'PENDING' | 'ACCEPTED' | 'PASSED' | 'WINNER';
+  } | null;
 }
 
 export default function SubmitDesignPage() {
@@ -86,11 +91,16 @@ export default function SubmitDesignPage() {
       return;
     }
 
-    // For logo contests, validate that all required file types are covered
-    if (contest && contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0) {
+    // For logo contests, validate that all required file types are covered ONLY for winners
+    if (contest && 
+        contest.platform === 'LOGO' && 
+        contest.logoFileTypes && 
+        contest.logoFileTypes.length > 0 && 
+        contest.userSubmission?.status === 'WINNER') {
+      
       // Check if the number of files matches the required file types
       if (files.length < contest.logoFileTypes.length) {
-        setError(`For logo contests, you need to provide ${contest.logoFileTypes.length} files covering all required formats: ${contest.logoFileTypes.join(', ')}`);
+        setError(`As the winner, you must provide ${contest.logoFileTypes.length} files covering all required formats: ${contest.logoFileTypes.join(', ')}`);
         return;
       }
       
@@ -115,7 +125,7 @@ export default function SubmitDesignPage() {
       );
       
       if (missingTypes.length > 0) {
-        setError(`Missing required file types: ${missingTypes.join(', ')}. Please ensure you provide files in all required formats.`);
+        setError(`Missing required file types: ${missingTypes.join(', ')}. As the winner, you must provide files in all required formats.`);
         return;
       }
     }
@@ -338,9 +348,12 @@ export default function SubmitDesignPage() {
                       Design Files *
                     </label>
                     
-                    {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                    {contest.platform === 'LOGO' && 
+                     contest.logoFileTypes && 
+                     contest.logoFileTypes.length > 0 && 
+                     contest.userSubmission?.status === 'WINNER' && (
                       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                        <h4 className="text-sm font-medium text-blue-900 mb-2">Required File Types for Logo Contest:</h4>
+                        <h4 className="text-sm font-medium text-blue-900 mb-2">🎉 Winner! Final File Delivery Required:</h4>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {contest.logoFileTypes.map((fileType, index) => (
                             <span 
@@ -352,8 +365,30 @@ export default function SubmitDesignPage() {
                           ))}
                         </div>
                         <p className="text-sm text-blue-700">
-                          Please provide <strong>{contest.logoFileTypes.length} file(s)</strong> covering all the required formats above. 
-                          Each file should be the same logo design but in the specified format.
+                          As the winner, you must provide <strong>{contest.logoFileTypes.length} file(s)</strong> covering all the required formats above. 
+                          Each file should be the same logo design but in the specified format for final delivery.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {contest.platform === 'LOGO' && 
+                     contest.logoFileTypes && 
+                     contest.logoFileTypes.length > 0 && 
+                     contest.userSubmission?.status !== 'WINNER' && (
+                      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">📝 Logo Contest - File Types Available:</h4>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {contest.logoFileTypes.map((fileType, index) => (
+                            <span 
+                              key={index} 
+                              className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
+                            >
+                              {fileType}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          For initial submission, upload your logo design in any format. If selected as winner, you'll need to provide all required file types.
                         </p>
                       </div>
                     )}
@@ -367,8 +402,10 @@ export default function SubmitDesignPage() {
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {contest.platform === 'LOGO' 
-                        ? `Supported formats: AI, PSD, EPS, PDF, PNG, JPG. Max ${contest.logoFileTypes?.length || 5} files.`
+                      {contest.platform === 'LOGO' && contest.userSubmission?.status === 'WINNER'
+                        ? `Winner delivery: AI, PSD, EPS, PDF, PNG, JPG. Max ${contest.logoFileTypes?.length || 5} files.`
+                        : contest.platform === 'LOGO'
+                        ? 'Initial submission: Any format accepted. Winner will provide all required formats.'
                         : 'Supported formats: JPG, PNG, GIF, MP4, MOV. Max 5 files.'
                       }
                     </p>
@@ -381,9 +418,12 @@ export default function SubmitDesignPage() {
                           ))}
                         </ul>
                         
-                        {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                        {contest.platform === 'LOGO' && 
+                         contest.logoFileTypes && 
+                         contest.logoFileTypes.length > 0 && 
+                         contest.userSubmission?.status === 'WINNER' && (
                           <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                            <p className="text-sm font-medium text-gray-700 mb-2">File Type Coverage:</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">File Type Coverage (Winner Delivery):</p>
                             <div className="space-y-2">
                               {contest.logoFileTypes.map((requiredType) => {
                                 const hasFile = files.some(file => {
@@ -407,8 +447,8 @@ export default function SubmitDesignPage() {
                             </div>
                             <p className="text-xs text-gray-600 mt-2">
                               {files.length >= contest.logoFileTypes.length 
-                                ? 'All required file types covered!'
-                                : `Need ${contest.logoFileTypes.length - files.length} more file(s)`
+                                ? 'All required file types covered! Ready for final delivery.'
+                                : `Need ${contest.logoFileTypes.length - files.length} more file(s) for winner delivery`
                               }
                             </p>
                           </div>
@@ -439,6 +479,7 @@ export default function SubmitDesignPage() {
                         (contest.platform === 'LOGO' && 
                          contest.logoFileTypes && 
                          contest.logoFileTypes.length > 0 && 
+                         contest.userSubmission?.status === 'WINNER' && 
                          files.length < contest.logoFileTypes.length)
                       }
                       className="flex-1"
