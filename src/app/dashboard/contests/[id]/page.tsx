@@ -22,6 +22,7 @@ interface Contest {
   acceptedCount: number;
   winningSubmissionId?: string;
   createdAt: string;
+  logoFileTypes?: string[];
   brand: {
     logoUrl: string | null;
     colors: string[];
@@ -311,6 +312,23 @@ export default function ContestDetailPage() {
                          'TikTok (1080×1920)'}
                       </div>
                     </div>
+                    {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-900">Files Needed:</span>
+                        <div className="text-gray-700">
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {contest.logoFileTypes.map((fileType, index) => (
+                              <span 
+                                key={index} 
+                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"
+                              >
+                                {fileType}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-gray-900">Current Round:</span>
                       <div className="text-gray-700">{getRoundName(contest.round)}</div>

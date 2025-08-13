@@ -23,7 +23,18 @@ export async function GET(request: NextRequest) {
           userId: session.user.id,
         },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        platform: true,
+        status: true,
+        round: true,
+        packageQuota: true,
+        expectedSubmissions: true,
+        acceptedCount: true,
+        createdAt: true,
+        logoFileTypes: true,
         user: {
           select: {
             name: true,

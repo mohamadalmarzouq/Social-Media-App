@@ -12,13 +12,14 @@ interface Contest {
   id: string;
   title: string;
   description: string;
-  platform: 'INSTAGRAM' | 'TIKTOK';
+  platform: 'LOGO' | 'INSTAGRAM' | 'TIKTOK';
   status: 'ACTIVE';
   round: number;
   packageQuota: number;
   expectedSubmissions: number;
   acceptedCount: number;
   createdAt: string;
+  logoFileTypes?: string[];
   user: {
     name: string;
   };
@@ -222,6 +223,22 @@ export default function DesignerDashboardPage() {
                       </div>
                       
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{contest.description}</p>
+                      
+                      {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-500 mb-1">Files Needed:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {contest.logoFileTypes.map((fileType, index) => (
+                              <span 
+                                key={index} 
+                                className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium"
+                              >
+                                {fileType}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="text-xs text-gray-500 mb-3">
                         <div>By {contest.user.name}</div>

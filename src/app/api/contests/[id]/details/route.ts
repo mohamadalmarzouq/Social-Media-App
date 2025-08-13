@@ -19,7 +19,20 @@ export async function GET(
       where: {
         id: params.id,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        platform: true,
+        status: true,
+        round: true,
+        packageQuota: true,
+        winnersNeeded: true,
+        expectedSubmissions: true,
+        acceptedCount: true,
+        winningSubmissionId: true,
+        createdAt: true,
+        logoFileTypes: true,
         user: {
           select: {
             name: true,

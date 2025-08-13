@@ -13,13 +13,14 @@ interface Contest {
   id: string;
   title: string;
   description: string;
-  platform: 'INSTAGRAM' | 'TIKTOK';
+  platform: 'LOGO' | 'INSTAGRAM' | 'TIKTOK';
   status: string;
   round: number;
   packageQuota: number;
   expectedSubmissions: number;
   acceptedCount: number;
   createdAt: string;
+  logoFileTypes?: string[];
   user: {
     name: string;
   };
@@ -170,10 +171,28 @@ export default function ContestDetailPage() {
                     <div>
                       <span className="font-medium text-gray-900">Platform:</span>
                       <div className="text-gray-700">
-                        {contest.platform} 
-                        {contest.platform === 'INSTAGRAM' ? ' (1080×1080)' : ' (1080×1920)'}
+                        {contest.platform === 'LOGO' ? 'Logo Design' :
+                         contest.platform === 'INSTAGRAM' ? 'Instagram (1080×1080)' : 
+                         'TikTok (1080×1920)'}
                       </div>
                     </div>
+                    {contest.platform === 'LOGO' && contest.logoFileTypes && contest.logoFileTypes.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-900">Files Needed:</span>
+                        <div className="text-gray-700">
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {contest.logoFileTypes.map((fileType, index) => (
+                              <span 
+                                key={index} 
+                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"
+                              >
+                                {fileType}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-gray-900">Current Round:</span>
                       <div className="text-gray-700">{getRoundName(contest.round)}</div>

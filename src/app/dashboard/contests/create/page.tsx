@@ -138,22 +138,44 @@ export default function CreateContestPage() {
     setValue('packageType', packageType);
     
     // Update expected submissions and winners needed based on package type
-    switch (packageType) {
-      case 'PACKAGE_1':
-        setValue('expectedSubmissions', 30);
-        setValue('packageQuota', 30); // Expect 30 submissions
-        setValue('winnersNeeded', 1); // Get 1 winner
-        break;
-      case 'PACKAGE_2':
-        setValue('expectedSubmissions', 60);
-        setValue('packageQuota', 60); // Expect 60 submissions
-        setValue('winnersNeeded', 2); // Get 2 winners
-        break;
-      case 'PACKAGE_3':
-        setValue('expectedSubmissions', 90);
-        setValue('packageQuota', 90); // Expect 90 submissions
-        setValue('winnersNeeded', 3); // Get 3 winners
-        break;
+    if (selectedService === 'LOGO') {
+      // Logo contests: all packages get 1 winner
+      switch (packageType) {
+        case 'PACKAGE_1':
+          setValue('expectedSubmissions', 30);
+          setValue('packageQuota', 30); // Expect 30 submissions
+          setValue('winnersNeeded', 1); // Get 1 winner
+          break;
+        case 'PACKAGE_2':
+          setValue('expectedSubmissions', 60);
+          setValue('packageQuota', 60); // Expect 60 submissions
+          setValue('winnersNeeded', 1); // Get 1 winner
+          break;
+        case 'PACKAGE_3':
+          setValue('expectedSubmissions', 90);
+          setValue('packageQuota', 90); // Expect 90 submissions
+          setValue('winnersNeeded', 1); // Get 1 winner
+          break;
+      }
+    } else {
+      // Instagram/TikTok contests: packages get 1, 2, or 3 winners
+      switch (packageType) {
+        case 'PACKAGE_1':
+          setValue('expectedSubmissions', 30);
+          setValue('packageQuota', 30); // Expect 30 submissions
+          setValue('winnersNeeded', 1); // Get 1 winner
+          break;
+        case 'PACKAGE_2':
+          setValue('expectedSubmissions', 60);
+          setValue('packageQuota', 60); // Expect 60 submissions
+          setValue('winnersNeeded', 2); // Get 2 winners
+          break;
+        case 'PACKAGE_3':
+          setValue('expectedSubmissions', 90);
+          setValue('packageQuota', 90); // Expect 90 submissions
+          setValue('winnersNeeded', 3); // Get 3 winners
+          break;
+      }
     }
   };
 
@@ -377,9 +399,19 @@ export default function CreateContestPage() {
                     } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
                   >
                     <option value="">Select package</option>
-                    <option value="PACKAGE_1">Package 1 (Expect 30, Get 1)</option>
-                    <option value="PACKAGE_2">Package 2 (Expect 60, Get 2)</option>
-                    <option value="PACKAGE_3">Package 3 (Expect 90, Get 3)</option>
+                    {selectedService === 'LOGO' ? (
+                      <>
+                        <option value="PACKAGE_1">Package 1 (Expect 30, Get 1)</option>
+                        <option value="PACKAGE_2">Package 2 (Expect 60, Get 1)</option>
+                        <option value="PACKAGE_3">Package 3 (Expect 90, Get 1)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="PACKAGE_1">Package 1 (Expect 30, Get 1)</option>
+                        <option value="PACKAGE_2">Package 2 (Expect 60, Get 2)</option>
+                        <option value="PACKAGE_3">Package 3 (Expect 90, Get 3)</option>
+                      </>
+                    )}
                   </select>
                   {errors.packageType && (
                     <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.packageType.message}</p>
@@ -401,7 +433,8 @@ export default function CreateContestPage() {
                     <div>
                       <span className="block text-lg font-semibold text-primary-900 dark:text-primary-100 mb-1">Final Designs</span>
                       <div className="text-3xl font-bold text-primary-700 dark:text-primary-300">
-                        {watchedPackageType === 'PACKAGE_1' ? '1' : 
+                        {selectedService === 'LOGO' ? '1' : 
+                         watchedPackageType === 'PACKAGE_1' ? '1' : 
                          watchedPackageType === 'PACKAGE_2' ? '2' : '3'}
                       </div>
                     </div>
