@@ -22,7 +22,17 @@ export const contestSchema = z.object({
   packageQuota: z.number().min(1, 'Must need at least 1 design').max(100, 'Maximum 100 designs per contest'),
   winnersNeeded: z.number().min(1, 'Must need at least 1 winner').max(10, 'Maximum 10 winners per contest'),
   expectedSubmissions: z.number().min(5, 'Must expect at least 5 submissions').max(100, 'Maximum 100 expected submissions'),
+  logoFileTypes: z.array(z.string()).optional(),
   brandData: brandSchema,
+}).refine((data) => {
+  // If platform is LOGO, logoFileTypes must have at least one item
+  if (data.platform === 'LOGO') {
+    return data.logoFileTypes && data.logoFileTypes.length > 0;
+  }
+  return true;
+}, {
+  message: 'Please select at least one logo file type',
+  path: ['logoFileTypes'],
 });
 
 export const commentSchema = z.object({

@@ -24,7 +24,7 @@ export default function CreateContestPage() {
     formState: { errors },
     watch,
     setValue,
-  } = useForm<ContestInput & { logoFileTypes?: string[] }>({
+  } = useForm<ContestInput>({
     resolver: zodResolver(contestSchema),
     defaultValues: {
       platform: 'LOGO',
@@ -74,9 +74,11 @@ export default function CreateContestPage() {
     if (service === 'LOGO') {
       setValue('fileType', 'STATIC_POST'); // Keep a valid default
       setSelectedLogoCategories([]);
+      setValue('logoFileTypes', []); // Reset logo file types
     } else {
       setValue('fileType', 'STATIC_POST');
       setSelectedLogoCategories([]);
+      setValue('logoFileTypes', []); // Reset logo file types
     }
   };
 
@@ -155,16 +157,9 @@ export default function CreateContestPage() {
     }
   };
 
-  const onSubmit = async (data: ContestInput & { logoFileTypes?: string[] }) => {
+  const onSubmit = async (data: ContestInput) => {
     setIsLoading(true);
     setError('');
-
-    // Validate logo file types selection
-    if (data.platform === 'LOGO' && (!data.logoFileTypes || data.logoFileTypes.length === 0)) {
-      setError('Please select at least one logo file type');
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/contests', {
@@ -360,8 +355,13 @@ export default function CreateContestPage() {
                       <option value="ANIMATED_POST">Animated Post</option>
                     </select>
                   )}
+                  {/* Hidden input to ensure logoFileTypes is properly registered */}
+                  <input type="hidden" {...register('logoFileTypes')} />
                   {errors.fileType && (
                     <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.fileType.message}</p>
+                  )}
+                  {errors.logoFileTypes && (
+                    <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.logoFileTypes.message}</p>
                   )}
                 </div>
 
