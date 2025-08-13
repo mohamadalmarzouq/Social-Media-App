@@ -323,6 +323,10 @@ export default function ReviewSubmissionsPage() {
   };
 
   const handleSubmissionAction = async (submissionId: string, action: 'ACCEPT' | 'PASS') => {
+    if (!confirm(`Are you sure you want to ${action.toLowerCase()} this design?`)) {
+      return;
+    }
+
     setUpdating(submissionId);
     try {
       const response = await fetch(`/api/submissions/${submissionId}/${action.toLowerCase()}`, {
@@ -340,33 +344,6 @@ export default function ReviewSubmissionsPage() {
     } catch (error) {
       console.error(`Error ${action.toLowerCase()}ing submission:`, error);
       alert(`An error occurred while ${action.toLowerCase()}ing the design`);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
-  const handleModifySubmission = async (submissionId: string) => {
-    if (!confirm('This will allow the designer to provide an additional submission based on your feedback. The current approved submission will remain, but the designer can submit improvements. Continue?')) {
-      return;
-    }
-
-    setUpdating(submissionId);
-    try {
-      const response = await fetch(`/api/submissions/${submissionId}/modify`, {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        // Refresh data
-        await fetchData();
-        alert('Designer can now provide additional submissions based on your feedback');
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Failed to enable modifications');
-      }
-    } catch (error) {
-      console.error('Error enabling modifications:', error);
-      alert('An error occurred while enabling modifications');
     } finally {
       setUpdating(null);
     }
@@ -894,25 +871,6 @@ export default function ReviewSubmissionsPage() {
                       >
                         {updating === submission.id ? 'Processing...' : 'Pass Design'}
                       </Button>
-                    </div>
-                  )}
-
-                  {/* Modify Button for Approved Submissions */}
-                  {submission.status === 'ACCEPTED' && (
-                    <div className="flex gap-3 pt-4 border-t">
-                      <Button
-                        onClick={() => handleModifySubmission(submission.id)}
-                        disabled={updating === submission.id}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {updating === submission.id ? 'Processing...' : 'Modify'}
-                      </Button>
-                      <div className="flex-1">
-                        <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                          💡 <strong>Modify:</strong> Allow the designer to provide additional submissions based on your feedback. 
-                          The current approved submission remains, but the designer can submit improvements.
-                        </p>
-                      </div>
                     </div>
                   )}
 

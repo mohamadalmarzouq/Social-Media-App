@@ -9,7 +9,6 @@ export const submissionSchema = z.object({
     filename: z.string(),
     type: z.enum(['IMAGE', 'VIDEO']),
   })).optional(), // Optional initially for temporary submission
-  isModification: z.boolean().optional(), // Flag for modification submissions
 });
 
 export const commentSchema = z.object({

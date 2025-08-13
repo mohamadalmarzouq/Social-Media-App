@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = submissionSchema.parse(body);
-    const { contestId, comment, files, isModification } = validatedData; // Add isModification to validation
+    const { contestId, comment, files } = validatedData;
 
     // Verify the contest exists and is active
     const contest = await prisma.contest.findUnique({
@@ -59,28 +59,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingSubmission) {
-      // If this is a modification submission, check if modifications are allowed
-      if (isModification) {
-        if (!existingSubmission.modificationsAllowed) {
-          return NextResponse.json({ 
-            error: 'Modifications are not allowed for this submission' 
-          }, { status: 400 });
-        }
-        
-        // For modifications, we create a new submission but mark it as a modification
-        // The original accepted submission remains unchanged
+      // Allow resubmission if previous submission was PASSED
+      if (existingSubmission.status === 'PASSED') {
+        // Delete the old passed submission to allow new one
+        await prisma.submission.delete({
+          where: { id: existingSubmission.id },
+        });
       } else {
-        // Allow resubmission if previous submission was PASSED
-        if (existingSubmission.status === 'PASSED') {
-          // Delete the old passed submission to allow new one
-          await prisma.submission.delete({
-            where: { id: existingSubmission.id },
-          });
-        } else {
-          return NextResponse.json({ 
-            error: 'You already have a submission for this contest in the current round' 
-          }, { status: 400 });
-        }
+        return NextResponse.json({ 
+          error: 'You already have a submission for this contest in the current round' 
+        }, { status: 400 });
       }
     }
 
@@ -90,9 +78,7 @@ export async function POST(request: NextRequest) {
         contestId,
         designerId: session.user.id,
         round: contest.round,
-        status: isModification ? 'MODIFICATION' : 'PENDING', // New status for modifications
-        modificationsAllowed: false, // Reset for new submission
-        modificationRequestedAt: null, // Reset for new submission
+        status: 'PENDING',
       },
       include: {
         contest: {
