@@ -46,14 +46,34 @@ export default function CreateContestPage() {
   const [selectedService, setSelectedService] = useState<string>('LOGO');
   const [selectedLogoFiles, setSelectedLogoFiles] = useState<string[]>([]);
 
-  // Logo file types with descriptions
-  const logoFileTypes = [
-    { value: 'AI', label: 'AI (Adobe Illustrator)', description: 'Source file for future edits' },
-    { value: 'PSD', label: 'PSD (Photoshop)', description: 'Source file for future edits' },
-    { value: 'EPS', label: 'EPS (Encapsulated PostScript)', description: 'Source file for future edits' },
-    { value: 'PDF', label: 'PDF (Portable Document Format)', description: 'Print-ready file' },
-    { value: 'PNG', label: 'PNG (Portable Network Graphics)', description: 'Digital use file' },
-    { value: 'JPG', label: 'JPG (Joint Photographic Experts Group)', description: 'Digital use file' },
+  // Logo file types organized by category with descriptions
+  const logoFileCategories = [
+    {
+      title: "Source Files",
+      description: "These are the files designers create to build out the design. You'll need these files to make any future design changes.",
+      files: [
+        { value: 'AI', label: 'AI (Adobe Illustrator)' },
+        { value: 'PSD', label: 'PSD (Adobe Photoshop Document)' },
+        { value: 'EPS', label: 'EPS (Encapsulated PostScript)' },
+      ]
+    },
+    {
+      title: "Print Files", 
+      description: "These files are ready to be printed on business cards, posters, t-shirts, merchandise and more. They are typically larger than digital files because printing requires higher resolution images.",
+      files: [
+        { value: 'PDF', label: 'PDF (Portable Document Format)' },
+        { value: 'EPS', label: 'EPS (Encapsulated PostScript)' },
+      ]
+    },
+    {
+      title: "Digital Files",
+      description: "These files can be used on websites, email, social media, video and more. They are typically smaller than print files.",
+      files: [
+        { value: 'PNG', label: 'PNG (Portable Network Graphics)' },
+        { value: 'JPG', label: 'JPG (Joint Photographic Experts Group)' },
+        { value: 'PDF', label: 'PDF (Portable Document Format)' },
+      ]
+    }
   ];
 
   // Handle service change
@@ -288,34 +308,45 @@ export default function CreateContestPage() {
                     Files Needed
                   </label>
                    {selectedService === 'LOGO' ? (
-                     <div className="space-y-4">
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         {logoFileTypes.map((fileType) => (
-                           <div key={fileType.value} className="flex items-start gap-3 p-3 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
-                             <input
-                               type="checkbox"
-                               id={`logo-file-${fileType.value}`}
-                               checked={selectedLogoFiles.includes(fileType.value)}
-                               onChange={() => handleLogoFileSelection(fileType.value)}
-                               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 dark:checked:bg-primary-600 rounded mt-1"
-                             />
-                             <div className="flex-1">
-                               <label htmlFor={`logo-file-${fileType.value}`} className="text-sm font-medium text-neutral-900 dark:text-neutral-100 cursor-pointer">
-                                 {fileType.label}
-                               </label>
-                               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{fileType.description}</p>
-                             </div>
+                     <div className="space-y-6">
+                       {logoFileCategories.map((category) => (
+                         <div key={category.title} className="space-y-4">
+                           <div className="border-b border-neutral-200 dark:border-neutral-700 pb-2">
+                             <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
+                               {category.title}
+                             </h3>
+                             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                               {category.description}
+                             </p>
                            </div>
-                         ))}
-                       </div>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                             {category.files.map((fileType) => (
+                               <div key={fileType.value} className="flex items-start gap-3 p-3 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
+                                 <input
+                                   type="checkbox"
+                                   id={`logo-file-${fileType.value}`}
+                                   checked={selectedLogoFiles.includes(fileType.value)}
+                                   onChange={() => handleLogoFileSelection(fileType.value)}
+                                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 dark:checked:bg-primary-600 rounded mt-1 flex-shrink-0"
+                                 />
+                                 <div className="flex-1 min-w-0">
+                                   <label htmlFor={`logo-file-${fileType.value}`} className="text-sm font-medium text-neutral-900 dark:text-neutral-100 cursor-pointer block">
+                                     {fileType.label}
+                                   </label>
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                         </div>
+                       ))}
                        {selectedLogoFiles.length > 0 && (
-                         <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-500/30 rounded-xl">
-                           <p className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">
+                         <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-500/30 rounded-xl">
+                           <p className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-3">
                              Selected file types ({selectedLogoFiles.length}):
                            </p>
                            <div className="flex flex-wrap gap-2">
                              {selectedLogoFiles.map((fileType) => (
-                               <span key={fileType} className="px-3 py-1 bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 text-sm rounded-full">
+                               <span key={fileType} className="px-3 py-1 bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 text-sm rounded-full font-medium">
                                  {fileType}
                                </span>
                              ))}
