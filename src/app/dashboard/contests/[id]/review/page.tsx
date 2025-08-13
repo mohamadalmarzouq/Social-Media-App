@@ -901,8 +901,8 @@ export default function ReviewSubmissionsPage() {
                     </div>
                   )}
 
-                  {/* Modify Button for Approved Submissions */}
-                  {submission.status === 'ACCEPTED' && (
+                  {/* Modify Button for Approved Submissions - HIDDEN FOR NOW */}
+                  {/* {submission.status === 'ACCEPTED' && (
                     <div className="flex gap-3 pt-4 border-t">
                       <Button
                         onClick={() => handleModifySubmission(submission.id)}
@@ -918,7 +918,7 @@ export default function ReviewSubmissionsPage() {
                         </p>
                       </div>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Passed submission info */}
                   {submission.status === 'PASSED' && (

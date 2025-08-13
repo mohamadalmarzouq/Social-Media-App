@@ -337,18 +337,20 @@ export default function SubmitDesignPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {contest.userSubmission?.modificationsAllowed ? 'Submit Additional Files' : 'Submit Your Design'}
+                  {/* {contest.userSubmission?.modificationsAllowed ? 'Submit Additional Files' : 'Submit Your Design'} */}
+                  Submit Your Design
                 </CardTitle>
                 <CardDescription>
-                  {contest.userSubmission?.modificationsAllowed 
+                  {/* {contest.userSubmission?.modificationsAllowed 
                     ? 'Upload additional files addressing the client feedback while keeping your accepted submission'
                     : 'Upload your design files and add any comments for the client'
-                  }
+                  } */}
+                  Upload your design files and add any comments for the client
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Modification Notice */}
-                {contest.userSubmission?.modificationsAllowed && (
+                {/* Modification Notice - HIDDEN FOR NOW */}
+                {/* {contest.userSubmission?.modificationsAllowed && (
                   <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
                     <div className="flex items-start gap-3">
                       <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -370,7 +372,7 @@ export default function SubmitDesignPage() {
                       </div>
                     </div>
                   </div>
-                )}
+                )} */}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {error && (
@@ -522,9 +524,9 @@ export default function SubmitDesignPage() {
                     >
                       {submitting 
                         ? 'Submitting...' 
-                        : contest.userSubmission?.modificationsAllowed 
+                        : /* contest.userSubmission?.modificationsAllowed 
                           ? 'Submit Additional Files'
-                          : 'Submit Design'
+                          : */ 'Submit Design'
                       }
                     </Button>
                     <Button
