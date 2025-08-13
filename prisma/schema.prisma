@@ -147,6 +147,7 @@ enum SubmissionStatus {
   ACCEPTED
   PASSED
   WINNER
+  MODIFICATION
 }
 
 enum AssetType {
