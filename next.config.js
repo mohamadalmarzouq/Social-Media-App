@@ -9,7 +9,6 @@ const nextConfig = {
     // Allow production builds to complete even if there are ESLint errors
     ignoreDuringBuilds: true,
   },
-  output: 'standalone',
 };
 
 module.exports = nextConfig;
