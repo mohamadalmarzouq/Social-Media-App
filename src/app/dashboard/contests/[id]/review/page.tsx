@@ -39,7 +39,7 @@ interface Contest {
   id: string;
   title: string;
   description: string;
-  platform: 'INSTAGRAM' | 'TIKTOK';
+  platform: 'LOGO' | 'INSTAGRAM' | 'TIKTOK';
   status: string;
   round: number;
   packageQuota: number;
@@ -54,6 +54,225 @@ interface Contest {
   };
 }
 
+// Image Viewer Modal Component
+function ImageViewerModal({ 
+  isOpen, 
+  onClose, 
+  asset 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  asset: Submission['assets'][0] | null; 
+}) {
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (isOpen) {
+      // Reset zoom and position when modal opens
+      setZoom(1);
+      setPosition({ x: 0, y: 0 });
+      
+      // Add keyboard event listeners
+      const handleKeyDown = (e: KeyboardEvent) => {
+        switch (e.key) {
+          case 'Escape':
+            onClose();
+            break;
+          case 'ArrowLeft':
+            // Could implement previous/next image navigation here
+            break;
+          case 'ArrowRight':
+            // Could implement previous/next image navigation here
+            break;
+          case '+':
+          case '=':
+            e.preventDefault();
+            setZoom(prev => Math.min(prev + 0.25, 3));
+            break;
+          case '-':
+            e.preventDefault();
+            setZoom(prev => Math.max(prev - 0.25, 0.5));
+            break;
+          case '0':
+            e.preventDefault();
+            setZoom(1);
+            setPosition({ x: 0, y: 0 });
+            break;
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !asset) return null;
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom <= 1) return;
+    
+    const startX = e.clientX - position.x;
+    const startY = e.clientY - position.y;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      setPosition({
+        x: e.clientX - startX,
+        y: e.clientY - startY
+      });
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
+      <div className="relative w-full h-full flex items-center justify-center p-4">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-all hover:scale-110"
+          title="Close (Esc)"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Zoom Controls */}
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black bg-opacity-50 text-white rounded-lg p-2">
+          <button
+            onClick={() => setZoom(prev => Math.max(prev - 0.25, 0.5))}
+            className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+            title="Zoom Out (-)"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+          <span className="text-sm font-medium min-w-[3rem] text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            onClick={() => setZoom(prev => Math.min(prev + 0.25, 3))}
+            className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+            title="Zoom In (=)"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+          <button
+            onClick={() => {
+              setZoom(1);
+              setPosition({ x: 0, y: 0 });
+            }}
+            className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+            title="Reset Zoom (0)"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Image/Video Display */}
+        <div 
+          className="relative overflow-hidden cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+          onWheel={(e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom(prev => {
+              const newZoom = Math.max(0.5, Math.min(3, prev + delta));
+              // Adjust position to zoom towards mouse cursor
+              if (newZoom !== prev) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                setPosition(prevPos => ({
+                  x: prevPos.x - (x * (newZoom - prev) / prev),
+                  y: prevPos.y - (y * (newZoom - prev) / prev)
+                }));
+              }
+              return newZoom;
+            });
+          }}
+          style={{ 
+            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+            transition: zoom === 1 ? 'transform 0.2s ease-out' : 'none'
+          }}
+        >
+          {asset.type === 'IMAGE' ? (
+            <img
+              src={asset.url}
+              alt={asset.filename}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
+              style={{ 
+                maxHeight: '90vh',
+                maxWidth: '90vw'
+              }}
+              draggable={false}
+            />
+          ) : (
+            <video
+              src={asset.url}
+              className="max-w-full max-h-full rounded-lg shadow-2xl"
+              controls
+              autoPlay
+              style={{ 
+                maxHeight: '90vh',
+                maxWidth: '90vw'
+              }}
+            />
+          )}
+        </div>
+
+        {/* File Info */}
+        <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg backdrop-blur-sm">
+          <p className="text-sm font-medium">{asset.filename}</p>
+          <p className="text-xs opacity-75">{asset.type}</p>
+          <p className="text-xs opacity-75 mt-1">
+            Use mouse wheel or +/- keys to zoom, drag to pan when zoomed
+          </p>
+        </div>
+
+        {/* Download Button */}
+        <div className="absolute bottom-4 right-4">
+          <Button
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = asset.url;
+              link.download = asset.filename;
+              link.click();
+            }}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download
+          </Button>
+        </div>
+
+        {/* Keyboard Shortcuts Help */}
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg text-sm opacity-75 hover:opacity-100 transition-opacity">
+          <span className="hidden sm:inline">Keyboard: Esc to close, +/- to zoom, 0 to reset, drag to pan</span>
+          <span className="sm:hidden">Tap to zoom, drag to pan</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ReviewSubmissionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -66,6 +285,7 @@ export default function ReviewSubmissionsPage() {
   const [commenting, setCommenting] = useState<string | null>(null);
   const [advancing, setAdvancing] = useState(false);
   const [newComments, setNewComments] = useState<{ [key: string]: string }>({});
+  const [selectedAsset, setSelectedAsset] = useState<Submission['assets'][0] | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role !== 'USER') {
@@ -357,6 +577,35 @@ export default function ReviewSubmissionsPage() {
           </CardContent>
         </Card>
 
+        {/* Design Evaluation Guide */}
+        <Card className="mb-8 bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-medium text-green-900 mb-2">🔍 Enhanced Design Evaluation</h3>
+                <p className="text-sm text-green-800 mb-2">
+                  <strong>New Feature:</strong> Click on any design file to view it in full size with advanced controls for better evaluation.
+                </p>
+                <ul className="text-xs text-green-700 space-y-1">
+                  <li>• <strong>Full-Size View:</strong> Click any design thumbnail to see the complete design without cropping</li>
+                  <li>• <strong>Zoom & Pan:</strong> Use +/- keys or mouse wheel to zoom, drag to pan when zoomed in</li>
+                  <li>• <strong>Keyboard Shortcuts:</strong> Esc to close, 0 to reset zoom, arrow keys for navigation</li>
+                  <li>• <strong>Download:</strong> Download any design file directly from the viewer</li>
+                  <li>• <strong>Comparison:</strong> Open all files in new tabs for side-by-side comparison</li>
+                </ul>
+                <p className="text-xs text-green-600 mt-2 font-medium">
+                  💡 This helps you make informed decisions about which designs should proceed to the next round!
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Round Advancement Rules */}
         {contest.status === 'ACTIVE' && (
           <Card className="mb-8 bg-purple-50 border-purple-200">
@@ -423,27 +672,107 @@ export default function ReviewSubmissionsPage() {
                 </CardHeader>
                 <CardContent>
                   {/* Design Files */}
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Design Files</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="mb-6">
+                    <h4 className="font-medium text-gray-900 mb-3">Design Files</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {submission.assets.map((asset) => (
-                        <div key={asset.id} className="relative">
-                          {asset.type === 'IMAGE' ? (
-                            <img
-                              src={asset.url}
-                              alt={asset.filename}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                            />
-                          ) : (
-                            <video
-                              src={asset.url}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                              controls
-                            />
-                          )}
-                          <p className="text-xs text-gray-600 mt-1 truncate">{asset.filename}</p>
+                        <div key={asset.id} className="relative group cursor-pointer bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200">
+                          {/* File Preview */}
+                          <div className="relative">
+                            {asset.type === 'IMAGE' ? (
+                              <img
+                                src={asset.url}
+                                alt={asset.filename}
+                                className="w-full h-48 object-cover hover:scale-105 transition-transform duration-200"
+                                onClick={() => setSelectedAsset(asset)}
+                              />
+                            ) : (
+                              <video
+                                src={asset.url}
+                                className="w-full h-48 object-cover hover:scale-105 transition-transform duration-200"
+                                onClick={() => setSelectedAsset(asset)}
+                              />
+                            )}
+                            
+                            {/* Overlay with View Button */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                              <Button
+                                onClick={() => setSelectedAsset(asset)}
+                                variant="secondary"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-gray-800 hover:bg-white"
+                              >
+                                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View Full Size
+                              </Button>
+                            </div>
+                            
+                            {/* File Type Badge */}
+                            <div className="absolute top-2 left-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                asset.type === 'IMAGE' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {asset.type}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* File Info */}
+                          <div className="p-3">
+                            <p className="text-sm font-medium text-gray-900 truncate mb-1" title={asset.filename}>
+                              {asset.filename}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-gray-500">
+                                Click to view full size
+                              </p>
+                              <Button
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = asset.url;
+                                  link.download = asset.filename;
+                                  link.click();
+                                }}
+                                variant="ghost"
+                                size="sm"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       ))}
+                    </div>
+                    
+                    {/* Quick Actions */}
+                    <div className="mt-4 flex items-center gap-3">
+                      <p className="text-sm text-gray-600">
+                        💡 <strong>Tip:</strong> Click on any design file to view it in full size for better evaluation
+                      </p>
+                      {submission.assets.length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Open all files in new tabs for comparison
+                            submission.assets.forEach(asset => {
+                              window.open(asset.url, '_blank');
+                            });
+                          }}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          Open All in Tabs
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -556,6 +885,15 @@ export default function ReviewSubmissionsPage() {
           )}
         </div>
       </div>
+
+      {/* Image Viewer Modal */}
+      {selectedAsset && (
+        <ImageViewerModal
+          isOpen={!!selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          asset={selectedAsset}
+        />
+      )}
     </div>
   );
 }
