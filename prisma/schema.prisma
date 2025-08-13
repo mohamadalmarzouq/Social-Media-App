@@ -56,6 +56,7 @@ model Contest {
   packageType         PackageType?
   winningSubmissionId String?
   winnersNeeded       Int
+  logoFileTypes       String[]     // Array of selected logo file types (AI, PSD, EPS, PDF, PNG, JPG)
   brand               Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
   user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   winningSubmission   Submission?   @relation("WinningSubmission", fields: [winningSubmissionId], references: [id])

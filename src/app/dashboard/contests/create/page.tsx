@@ -24,7 +24,7 @@ export default function CreateContestPage() {
     formState: { errors },
     watch,
     setValue,
-  } = useForm<ContestInput>({
+  } = useForm<ContestInput & { logoFileTypes?: string[] }>({
     resolver: zodResolver(contestSchema),
     defaultValues: {
       platform: 'LOGO',
@@ -33,6 +33,7 @@ export default function CreateContestPage() {
       packageQuota: 30,
       winnersNeeded: 1,
       expectedSubmissions: 30,
+      logoFileTypes: [],
       brandData: {
         colors: [],
         fonts: [],
@@ -42,6 +43,43 @@ export default function CreateContestPage() {
 
   const [colors, setColors] = useState<string[]>([]);
   const [fonts, setFonts] = useState<string[]>([]);
+  const [selectedService, setSelectedService] = useState<string>('LOGO');
+  const [selectedLogoFiles, setSelectedLogoFiles] = useState<string[]>([]);
+
+  // Logo file types with descriptions
+  const logoFileTypes = [
+    { value: 'AI', label: 'AI (Adobe Illustrator)', description: 'Source file for future edits' },
+    { value: 'PSD', label: 'PSD (Photoshop)', description: 'Source file for future edits' },
+    { value: 'EPS', label: 'EPS (Encapsulated PostScript)', description: 'Source file for future edits' },
+    { value: 'PDF', label: 'PDF (Portable Document Format)', description: 'Print-ready file' },
+    { value: 'PNG', label: 'PNG (Portable Network Graphics)', description: 'Digital use file' },
+    { value: 'JPG', label: 'JPG (Joint Photographic Experts Group)', description: 'Digital use file' },
+  ];
+
+  // Handle service change
+  const handleServiceChange = (service: 'LOGO' | 'INSTAGRAM' | 'TIKTOK') => {
+    setSelectedService(service);
+    setValue('platform', service);
+    
+    // Reset file type when service changes
+    if (service === 'LOGO') {
+      setValue('fileType', 'STATIC_POST'); // Keep a valid default
+      setSelectedLogoFiles([]);
+    } else {
+      setValue('fileType', 'STATIC_POST');
+      setSelectedLogoFiles([]);
+    }
+  };
+
+  // Handle logo file type selection
+  const handleLogoFileSelection = (fileType: string) => {
+    const newSelection = selectedLogoFiles.includes(fileType)
+      ? selectedLogoFiles.filter(f => f !== fileType)
+      : [...selectedLogoFiles, fileType];
+    
+    setSelectedLogoFiles(newSelection);
+    setValue('logoFileTypes', newSelection);
+  };
 
   if (status === 'loading') {
     return (
@@ -101,9 +139,16 @@ export default function CreateContestPage() {
     }
   };
 
-  const onSubmit = async (data: ContestInput) => {
+  const onSubmit = async (data: ContestInput & { logoFileTypes?: string[] }) => {
     setIsLoading(true);
     setError('');
+
+    // Validate logo file types selection
+    if (data.platform === 'LOGO' && (!data.logoFileTypes || data.logoFileTypes.length === 0)) {
+      setError('Please select at least one logo file type');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/contests', {
@@ -111,7 +156,10 @@ export default function CreateContestPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          logoFileTypes: data.platform === 'LOGO' ? data.logoFileTypes : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -220,6 +268,7 @@ export default function CreateContestPage() {
                   </label>
                   <select
                     {...register('platform')}
+                    onChange={(e) => handleServiceChange(e.target.value as 'LOGO' | 'INSTAGRAM' | 'TIKTOK')}
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
                       errors.platform ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
                     } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
@@ -238,16 +287,54 @@ export default function CreateContestPage() {
                   <label className="block text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
                     Files Needed
                   </label>
-                  <select
-                    {...register('fileType')}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
-                      errors.fileType ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
-                    } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
-                  >
-                    <option value="">Select file type</option>
-                    <option value="STATIC_POST">Static Post</option>
-                    <option value="ANIMATED_POST">Animated Post</option>
-                  </select>
+                   {selectedService === 'LOGO' ? (
+                     <div className="space-y-4">
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         {logoFileTypes.map((fileType) => (
+                           <div key={fileType.value} className="flex items-start gap-3 p-3 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
+                             <input
+                               type="checkbox"
+                               id={`logo-file-${fileType.value}`}
+                               checked={selectedLogoFiles.includes(fileType.value)}
+                               onChange={() => handleLogoFileSelection(fileType.value)}
+                               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 dark:checked:bg-primary-600 rounded mt-1"
+                             />
+                             <div className="flex-1">
+                               <label htmlFor={`logo-file-${fileType.value}`} className="text-sm font-medium text-neutral-900 dark:text-neutral-100 cursor-pointer">
+                                 {fileType.label}
+                               </label>
+                               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{fileType.description}</p>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                       {selectedLogoFiles.length > 0 && (
+                         <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-500/30 rounded-xl">
+                           <p className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">
+                             Selected file types ({selectedLogoFiles.length}):
+                           </p>
+                           <div className="flex flex-wrap gap-2">
+                             {selectedLogoFiles.map((fileType) => (
+                               <span key={fileType} className="px-3 py-1 bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 text-sm rounded-full">
+                                 {fileType}
+                               </span>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   ) : (
+                    <select
+                      {...register('fileType')}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 ${
+                        errors.fileType ? 'border-danger-500' : 'border-neutral-200 dark:border-neutral-700 focus:border-primary-500'
+                      } bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`}
+                    >
+                      <option value="">Select file type</option>
+                      <option value="STATIC_POST">Static Post</option>
+                      <option value="ANIMATED_POST">Animated Post</option>
+                    </select>
+                  )}
                   {errors.fileType && (
                     <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{errors.fileType.message}</p>
                   )}

@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         packageQuota: contestData.packageQuota,
         winnersNeeded: contestData.winnersNeeded,
         expectedSubmissions: contestData.expectedSubmissions,
+        logoFileTypes: contestData.logoFileTypes || [], // Include logo file types
         status: 'ACTIVE',
       },
       include: {
