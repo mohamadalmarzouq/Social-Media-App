@@ -44,35 +44,24 @@ export default function CreateContestPage() {
   const [colors, setColors] = useState<string[]>([]);
   const [fonts, setFonts] = useState<string[]>([]);
   const [selectedService, setSelectedService] = useState<string>('LOGO');
-  const [selectedLogoFiles, setSelectedLogoFiles] = useState<string[]>([]);
+  const [selectedLogoCategories, setSelectedLogoCategories] = useState<string[]>([]);
 
-  // Logo file types organized by category with descriptions
+  // Logo file categories with descriptions
   const logoFileCategories = [
     {
       title: "Source Files",
       description: "These are the files designers create to build out the design. You'll need these files to make any future design changes.",
-      files: [
-        { value: 'AI', label: 'AI (Adobe Illustrator)' },
-        { value: 'PSD', label: 'PSD (Adobe Photoshop Document)' },
-        { value: 'EPS', label: 'EPS (Encapsulated PostScript)' },
-      ]
+      files: ['AI', 'PSD', 'EPS']
     },
     {
       title: "Print Files", 
       description: "These files are ready to be printed on business cards, posters, t-shirts, merchandise and more. They are typically larger than digital files because printing requires higher resolution images.",
-      files: [
-        { value: 'PDF', label: 'PDF (Portable Document Format)' },
-        { value: 'EPS', label: 'EPS (Encapsulated PostScript)' },
-      ]
+      files: ['PDF', 'EPS']
     },
     {
       title: "Digital Files",
       description: "These files can be used on websites, email, social media, video and more. They are typically smaller than print files.",
-      files: [
-        { value: 'PNG', label: 'PNG (Portable Network Graphics)' },
-        { value: 'JPG', label: 'JPG (Joint Photographic Experts Group)' },
-        { value: 'PDF', label: 'PDF (Portable Document Format)' },
-      ]
+      files: ['PNG', 'JPG', 'PDF']
     }
   ];
 
@@ -84,21 +73,28 @@ export default function CreateContestPage() {
     // Reset file type when service changes
     if (service === 'LOGO') {
       setValue('fileType', 'STATIC_POST'); // Keep a valid default
-      setSelectedLogoFiles([]);
+      setSelectedLogoCategories([]);
     } else {
       setValue('fileType', 'STATIC_POST');
-      setSelectedLogoFiles([]);
+      setSelectedLogoCategories([]);
     }
   };
 
-  // Handle logo file type selection
-  const handleLogoFileSelection = (fileType: string) => {
-    const newSelection = selectedLogoFiles.includes(fileType)
-      ? selectedLogoFiles.filter(f => f !== fileType)
-      : [...selectedLogoFiles, fileType];
+  // Handle logo category selection
+  const handleLogoCategorySelection = (categoryTitle: string) => {
+    const newSelection = selectedLogoCategories.includes(categoryTitle)
+      ? selectedLogoCategories.filter(c => c !== categoryTitle)
+      : [...selectedLogoCategories, categoryTitle];
     
-    setSelectedLogoFiles(newSelection);
-    setValue('logoFileTypes', newSelection);
+    setSelectedLogoCategories(newSelection);
+    
+    // Collect all file types from selected categories
+    const allSelectedFiles = newSelection.flatMap(categoryTitle => {
+      const category = logoFileCategories.find(c => c.title === categoryTitle);
+      return category ? category.files : [];
+    });
+    
+    setValue('logoFileTypes', allSelectedFiles);
   };
 
   if (status === 'loading') {
@@ -311,43 +307,41 @@ export default function CreateContestPage() {
                      <div className="space-y-6">
                        {logoFileCategories.map((category) => (
                          <div key={category.title} className="space-y-4">
-                           <div className="border-b border-neutral-200 dark:border-neutral-700 pb-2">
-                             <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
-                               {category.title}
-                             </h3>
-                             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                               {category.description}
-                             </p>
-                           </div>
-                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                             {category.files.map((fileType) => (
-                               <div key={fileType.value} className="flex items-start gap-3 p-3 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
-                                 <input
-                                   type="checkbox"
-                                   id={`logo-file-${fileType.value}`}
-                                   checked={selectedLogoFiles.includes(fileType.value)}
-                                   onChange={() => handleLogoFileSelection(fileType.value)}
-                                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 dark:checked:bg-primary-600 rounded mt-1 flex-shrink-0"
-                                 />
-                                 <div className="flex-1 min-w-0">
-                                   <label htmlFor={`logo-file-${fileType.value}`} className="text-sm font-medium text-neutral-900 dark:text-neutral-100 cursor-pointer block">
-                                     {fileType.label}
-                                   </label>
-                                 </div>
+                           <div className="flex items-start gap-3 p-4 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
+                             <input
+                               type="checkbox"
+                               id={`logo-category-${category.title.replace(/\s+/g, '-')}`}
+                               checked={selectedLogoCategories.includes(category.title)}
+                               onChange={() => handleLogoCategorySelection(category.title)}
+                               className="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 dark:border-neutral-600 dark:checked:bg-primary-600 rounded mt-1 flex-shrink-0"
+                             />
+                             <div className="flex-1">
+                               <label htmlFor={`logo-category-${category.title.replace(/\s+/g, '-')}`} className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer block mb-2">
+                                 {category.title}
+                               </label>
+                               <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                 {category.description}
+                               </p>
+                               <div className="mt-3 flex flex-wrap gap-2">
+                                 {category.files.map((fileType) => (
+                                   <span key={fileType} className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs rounded-md">
+                                     {fileType}
+                                   </span>
+                                 ))}
                                </div>
-                             ))}
+                             </div>
                            </div>
                          </div>
                        ))}
-                       {selectedLogoFiles.length > 0 && (
+                       {selectedLogoCategories.length > 0 && (
                          <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-500/30 rounded-xl">
                            <p className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-3">
-                             Selected file types ({selectedLogoFiles.length}):
+                             Selected categories ({selectedLogoCategories.length}):
                            </p>
                            <div className="flex flex-wrap gap-2">
-                             {selectedLogoFiles.map((fileType) => (
-                               <span key={fileType} className="px-3 py-1 bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 text-sm rounded-full font-medium">
-                                 {fileType}
+                             {selectedLogoCategories.map((categoryTitle) => (
+                               <span key={categoryTitle} className="px-3 py-1 bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 text-sm rounded-full font-medium">
+                                 {categoryTitle}
                                </span>
                              ))}
                            </div>
