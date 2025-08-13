@@ -72,12 +72,11 @@ export async function POST(
     });
 
     // Log the modification request for audit purposes
-    await prisma.submissionComment.create({
+    await prisma.comment.create({
       data: {
         submissionId: submissionId,
         message: `Modification requested by contest owner. Designer can now provide additional submissions based on feedback.`,
         authorId: session.user.id,
-        authorRole: 'USER',
       },
     });
 
