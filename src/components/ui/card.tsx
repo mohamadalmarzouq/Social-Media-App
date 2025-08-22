@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1",
+      "rounded-3xl border border-neutral-200/50 dark:border-neutral-600/50 bg-gradient-to-br from-white/90 via-white/80 to-white/70 dark:from-neutral-900/90 dark:via-neutral-800/80 dark:to-neutral-700/70 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-glow",
       className
     )}
     {...props}
@@ -35,7 +35,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-2xl font-heading font-semibold leading-none tracking-tight text-neutral-900 dark:text-neutral-100",
+      "text-2xl font-heading font-semibold leading-none tracking-tight gradient-text-primary",
       className
     )}
     {...props}
@@ -78,4 +78,50 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+// Enhanced card variants
+const CardVibrant = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-3xl border border-primary-200/50 dark:border-primary-500/30 bg-gradient-to-br from-primary-50/80 via-accent-50/80 to-purple-50/80 dark:from-primary-900/20 dark:via-accent-900/20 dark:to-purple-900/20 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-glow",
+      className
+    )}
+    {...props}
+  />
+))
+CardVibrant.displayName = "CardVibrant"
+
+const CardSuccess = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-3xl border border-green-200/50 dark:border-green-500/30 bg-gradient-to-br from-green-50/80 via-emerald-50/80 to-teal-50/80 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-glow",
+      className
+    )}
+    {...props}
+  />
+))
+CardSuccess.displayName = "CardSuccess"
+
+const CardGlass = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-3xl border border-white/20 dark:border-neutral-600/30 bg-white/10 dark:bg-neutral-800/10 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1",
+      className
+    )}
+    {...props}
+  />
+))
+CardGlass.displayName = "CardGlass"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, CardVibrant, CardSuccess, CardGlass }
