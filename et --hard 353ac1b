@@ -1,0 +1,5 @@
+[33m7862309[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m  Major UI/UX redesign: Transform app to vibrant modern design with enhanced components, gradients, animations, and glass morphism effects. Includes updated landing page, dashboards, auth pages, and component library with new variants and styling.
+[33m353ac1b[m Hide modification UI: comment out modify button and modification notices to reduce user confusion
+[33m9d7cf86[m Restore modification system: prevent deployment failures by keeping existing database schema
+[33m6d03b34[m Fix deployment: remove standalone output config to resolve Render deployment issue
+[33mc31708b[m Remove modification request mechanism: revert to simple pass/accept/comment flow with designer resubmission
