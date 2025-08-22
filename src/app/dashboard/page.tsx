@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -23,14 +23,14 @@ interface Contest {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, status, signOut } = useAuth();
   const router = useRouter();
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'DESIGNER') {
+    if (status === 'authenticated' && user?.role === 'DESIGNER') {
       router.push('/designer/dashboard');
       return;
     }
@@ -38,7 +38,7 @@ export default function DashboardPage() {
     if (status === 'authenticated') {
       fetchContests();
     }
-  }, [session, status, router]);
+  }, [user, status, router]);
 
   const fetchContests = async () => {
     try {
@@ -111,7 +111,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold gradient-text-primary">Dashboard</h1>
-              <p className="text-lg text-neutral-600 mt-1">Welcome back, {session?.user?.name}</p>
+              <p className="text-lg text-neutral-600 mt-1">Welcome back, {user?.name}</p>
             </div>
             <div className="flex gap-3">
               <Link href="/dashboard/contests/create">
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 variant="glass" 
                 size="lg"
                 onClick={() => {
-                  router.push('/api/auth/signout');
+                  signOut();
                 }}
               >
                 Sign Out
