@@ -22,25 +22,53 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // Check if this is an admin login attempt
+      const isAdminLogin = formData.email === process.env.NEXT_PUBLIC_ADMIN_USERNAME || 
+                          formData.email === 'admin' || 
+                          formData.email === 'admin@admin.com';
 
-      const data = await response.json();
+      if (isAdminLogin) {
+        // Admin authentication
+        const adminResponse = await fetch('/api/admin/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            username: formData.email, 
+            password: formData.password 
+          }),
+        });
 
-      if (data.success) {
-        // Redirect based on user role
-        if (data.user.role === 'DESIGNER') {
-          router.push('/designer/dashboard');
+        const adminData = await adminResponse.json();
+
+        if (adminData.success) {
+          router.push('/admin/dashboard');
         } else {
-          router.push('/dashboard');
+          setError(adminData.message || 'Invalid admin credentials');
         }
       } else {
-        setError(data.message || 'Invalid email or password');
+        // Regular user authentication
+        const userResponse = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const userData = await userResponse.json();
+
+        if (userData.success) {
+          // Redirect based on user role
+          if (userData.user.role === 'DESIGNER') {
+            router.push('/designer/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
+        } else {
+          setError(userData.message || 'Invalid email or password');
+        }
       }
     } catch (error) {
       setError('An error occurred during sign in');
@@ -80,15 +108,15 @@ export default function SignInPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
-                  Email Address
+                  Email Address or Username
                 </label>
                 <Input
                   id="email"
                   name="email"
-                  type="email"
+                  type="text"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
+                  placeholder="Enter your email or username"
                   required
                   className="form-field-modern"
                 />
@@ -127,26 +155,13 @@ export default function SignInPage() {
               </Button>
             </form>
             
-            <div className="mt-6 text-center space-y-4">
+            <div className="mt-6 text-center">
               <p className="text-sm text-neutral-600">
                 Don't have an account?{' '}
                 <Link href="/auth/signup" className="text-primary-600 hover:text-primary-700 font-medium">
                   Sign up
                 </Link>
               </p>
-              
-              <div className="border-t border-neutral-200/50 pt-4">
-                <Link 
-                  href="/admin/login" 
-                  className="text-sm text-neutral-500 hover:text-neutral-700 font-medium inline-flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Admin Portal
-                </Link>
-              </div>
             </div>
           </div>
         </CardVibrant>
