@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         email: true,
-        password: true,
+        passwordHash: true,
         role: true
       }
     });
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
       return NextResponse.json(
         { success: false, message: 'Invalid email or password' },
