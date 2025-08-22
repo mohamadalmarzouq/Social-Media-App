@@ -1,39 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CardVibrant } from '@/components/ui/card';
-import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { data: session, status } = useSession();
   const router = useRouter();
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="spinner-vibrant h-8 w-8 mx-auto"></div>
-          <p className="mt-2 text-neutral-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (session) {
-    if (session.user.role === 'DESIGNER') {
-      router.push('/designer/dashboard');
-    } else {
-      router.push('/dashboard');
-    }
-    return null;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +22,38 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const result = await signIn('google', {
-        email,
-        redirect: false,
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
-      if (result?.error) {
-        setError('Sign in failed. Please try again.');
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect based on user role
+        if (data.user.role === 'DESIGNER') {
+          router.push('/designer/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        setError(data.message || 'Invalid email or password');
       }
     } catch (error) {
-      setError('An error occurred during sign in.');
+      setError('An error occurred during sign in');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
@@ -62,6 +62,7 @@ export default function SignInPage() {
       <div className="absolute inset-0 bg-pattern-dots opacity-20"></div>
       <div className="absolute top-20 left-10 w-72 h-72 bg-blob rounded-full opacity-40 animate-float"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-blob-accent rounded-full opacity-30 animate-float" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-1/2 left-1/4 w-48 h-48 bg-blob-success rounded-full opacity-30 animate-float" style={{ animationDelay: '4s' }}></div>
       
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
@@ -70,26 +71,42 @@ export default function SignInPage() {
         </div>
         
         <CardVibrant className="animate-fade-in-scale">
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Access your contests and submissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold gradient-text-primary">Sign In</h2>
+              <p className="text-neutral-600 mt-2">Access your contests and submissions</p>
+            </div>
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
                   Email Address
                 </label>
-                <input
+                <Input
                   id="email"
+                  name="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Enter your email"
                   required
-                  className="form-field-modern w-full"
+                  className="form-field-modern"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-2">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  required
+                  className="form-field-modern"
                 />
               </div>
               
@@ -106,7 +123,7 @@ export default function SignInPage() {
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? 'Signing In...' : 'Sign In with Google'}
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
             
@@ -131,7 +148,7 @@ export default function SignInPage() {
                 </Link>
               </div>
             </div>
-          </CardContent>
+          </div>
         </CardVibrant>
       </div>
     </div>

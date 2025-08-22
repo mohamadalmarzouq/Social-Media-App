@@ -3,28 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { signUpSchema, type SignUpInput } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/button';
+import { CardVibrant } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SignUpPage() {
-  const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignUpInput>({
-    resolver: zodResolver(signUpSchema),
-  });
-
-  const onSubmit = async (data: SignUpInput) => {
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     setError('');
 
     try {
@@ -33,130 +29,150 @@ export default function SignUpPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to create account');
-        return;
-      }
+      const data = await response.json();
 
-      // Redirect to sign in page with success message
-      router.push('/auth/signin?message=Account created successfully. Please sign in.');
+      if (data.success) {
+        // Redirect based on role
+        if (formData.role === 'DESIGNER') {
+          router.push('/designer/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        setError(data.message || 'Sign up failed');
+      }
     } catch (error) {
-      console.error('Sign up error:', error);
-      setError('An error occurred. Please try again.');
+      setError('An error occurred during sign up');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 bg-pattern-dots opacity-20"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-blob rounded-full opacity-40 animate-float"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-blob-accent rounded-full opacity-30 animate-float" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-1/2 left-1/4 w-48 h-48 bg-blob-success rounded-full opacity-30 animate-float" style={{ animationDelay: '4s' }}></div>
+      
+      <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Social Media Contest App</h1>
-          <p className="mt-2 text-gray-600">Create your account</p>
+          <h1 className="text-4xl font-bold gradient-text mb-2">Social Media Contest App</h1>
+          <p className="text-xl text-neutral-600">Create your account</p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign Up</CardTitle>
-            <CardDescription>
-              Create an account to start creating or participating in contests
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-                  {error}
-                </div>
-              )}
-
+        
+        <CardVibrant className="animate-fade-in-scale">
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold gradient-text-primary">Sign Up</h2>
+              <p className="text-neutral-600 mt-2">Create an account to start creating or participating in contests</p>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-2">
                   Full Name
                 </label>
                 <Input
-                  {...register('name')}
+                  id="name"
+                  name="name"
                   type="text"
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="John Doe"
-                  className={errors.name ? 'border-red-500' : ''}
+                  required
+                  className="form-field-modern"
                 />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
               </div>
-
+              
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
+                  Email Address
                 </label>
                 <Input
-                  {...register('email')}
+                  id="email"
+                  name="email"
                   type="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="your@email.com"
-                  className={errors.email ? 'border-red-500' : ''}
+                  required
+                  className="form-field-modern"
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
               </div>
-
+              
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-2">
                   Password
                 </label>
                 <Input
-                  {...register('password')}
+                  id="password"
+                  name="password"
                   type="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Create a strong password"
-                  className={errors.password ? 'border-red-500' : ''}
+                  required
+                  className="form-field-modern"
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
               </div>
-
+              
               <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="role" className="block text-sm font-medium text-neutral-700 mb-2">
                   I am a...
                 </label>
                 <select
-                  {...register('role')}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.role ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  required
+                  className="form-field-modern w-full"
                 >
                   <option value="">Select your role</option>
                   <option value="USER">Business Owner (Create Contests)</option>
-                  <option value="DESIGNER">Designer (Join Contests)</option>
+                  <option value="DESIGNER">Designer (Submit Designs)</option>
                 </select>
-                {errors.role && (
-                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
-                )}
               </div>
-
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+              
               <Button
                 type="submit"
-                variant="primary"
+                variant="vibrant"
+                size="xl"
                 className="w-full"
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
-
-            <div className="mt-6 text-center text-sm">
-              <span className="text-gray-600">Already have an account? </span>
-              <Link href="/auth/signin" className="text-blue-600 hover:text-blue-500 font-medium">
-                Sign in
-              </Link>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-neutral-600">
+                Already have an account?{' '}
+                <Link href="/auth/signin" className="text-primary-600 hover:text-primary-700 font-medium">
+                  Sign in
+                </Link>
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardVibrant>
       </div>
     </div>
   );
