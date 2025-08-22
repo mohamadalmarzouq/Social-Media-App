@@ -23,7 +23,7 @@ export default function SignInPage() {
 
     try {
       // Check if this is an admin login attempt
-      const isAdminLogin = formData.email === process.env.NEXT_PUBLIC_ADMIN_USERNAME || 
+      const isAdminLogin = formData.email === 'Socialmediaadmin' || 
                           formData.email === 'admin' || 
                           formData.email === 'admin@admin.com';
 
