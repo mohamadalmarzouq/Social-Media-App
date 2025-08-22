@@ -117,7 +117,15 @@ export default function CreateContestPage() {
     return null;
   }
 
-  if (user?.role !== 'USER') {
+  // Debug logging
+  console.log('Auth status:', status);
+  console.log('User data:', user);
+  console.log('User role:', user?.role);
+  console.log('Role check:', user?.role !== 'USER');
+
+  // Temporarily allow both USER and DESIGNER to create contests for testing
+  if (!user || (user.role !== 'USER' && user.role !== 'DESIGNER')) {
+    console.log('Role mismatch - redirecting to dashboard');
     router.push('/dashboard');
     return null;
   }

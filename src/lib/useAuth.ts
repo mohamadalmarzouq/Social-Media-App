@@ -30,11 +30,13 @@ export function useAuth(): AuthState {
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Session check response:', data);
           setAuthState({
             user: data.user,
             status: 'authenticated'
           });
         } else {
+          console.log('Session check failed:', response.status);
           setAuthState({
             user: null,
             status: 'unauthenticated'
