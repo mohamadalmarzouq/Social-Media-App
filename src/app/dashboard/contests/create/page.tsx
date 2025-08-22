@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/useAuth';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,7 @@ import { ColorPicker } from '@/components/ui/color-picker';
 import { FontPicker } from '@/components/ui/font-picker';
 
 export default function CreateContestPage() {
-  const { data: session, status } = useSession();
+  const { user, status } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -117,7 +117,7 @@ export default function CreateContestPage() {
     return null;
   }
 
-  if (session?.user?.role !== 'USER') {
+  if (user?.role !== 'USER') {
     router.push('/dashboard');
     return null;
   }
