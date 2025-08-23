@@ -1,5 +1,0 @@
-[33m7dae067[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Fix TypeScript error in submissions API - Change 'number' to 'true' in Prisma select
-[33ma118738[m Add designer submission functionality - Create submission page, API endpoints, and file upload system
-[33md953907[m Fix database schema and add contest cancellation features
-[33m1635589[m Fix contest creation: update NextAuth config, Prisma schema, and API routes
-[33m3208c27[m Add contest cancellation functionality and fix database schema
