@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireUserMobile } from '@/lib/mobileAuth';
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (session.user.role !== 'USER') {
-      return NextResponse.json({ error: 'Only business owners can cancel contests' }, { status: 403 });
+    if (userData.role !== 'USER') {
+      return NextResponse.json(
+        { error: 'Only business owners can cancel contests' },
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const params = await context.params;
@@ -25,7 +24,7 @@ export async function POST(
     const contest = await prisma.contest.findUnique({
       where: {
         id: contestId,
-        userId: session.user.id, // Ensure user owns the contest
+        userId: userData.id, // Ensure user owns the contest
       },
       include: {
         submissions: {
@@ -40,7 +39,10 @@ export async function POST(
     });
 
     if (!contest) {
-      return NextResponse.json({ error: 'Contest not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Contest not found' },
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Business Rule: Cannot cancel if contest has entered round 2 or beyond
@@ -50,21 +52,21 @@ export async function POST(
     if (hasAcceptedInRound1) {
       return NextResponse.json({ 
         error: 'Cannot cancel contest after entering round 2. Some designs were already approved in round 1.' 
-      }, { status: 400 });
+      }, { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Business Rule: Cannot cancel if contest is already completed
     if (contest.status === 'COMPLETED') {
       return NextResponse.json({ 
         error: 'Cannot cancel a completed contest' 
-      }, { status: 400 });
+      }, { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Business Rule: Cannot cancel if contest is already cancelled
     if (contest.status === 'CANCELLED') {
       return NextResponse.json({ 
         error: 'Contest is already cancelled' 
-      }, { status: 400 });
+      }, { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Cancel the contest
@@ -81,12 +83,12 @@ export async function POST(
     return NextResponse.json({ 
       message: 'Contest cancelled successfully',
       contest: updatedContest 
-    });
+    }, { headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('Error cancelling contest:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Unauthorized' },
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

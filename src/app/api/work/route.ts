@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireUserMobile } from '@/lib/mobileAuth';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
     // Get only winning submissions from user's contests
     const winningSubmissions = await prisma.submission.findMany({
       where: {
         status: 'WINNER', // Only show winning designs
         contest: {
-          userId: session.user.id,
+          userId: userData.id,
         },
       },
       include: {
@@ -69,8 +65,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching winning designs:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Unauthorized' },
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

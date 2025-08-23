@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireUserMobile } from '@/lib/mobileAuth';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
     const contests = await prisma.contest.findMany({
       where: {
-        userId: session.user.id,
+        userId: userData.id,
       },
       include: {
         _count: {
@@ -37,32 +33,35 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching contests:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Unauthorized' },
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (session.user.role !== 'USER') {
-      return NextResponse.json({ error: 'Only business owners can create contests' }, { status: 403 });
+    if (userData.role !== 'USER') {
+      return NextResponse.json(
+        { error: 'Only business owners can create contests' },
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Get user by email (safe even if session.id isn't present)
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email! },
+      where: { email: userData.email! },
       select: { id: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const body = await request.json();
@@ -117,7 +116,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating contest:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
