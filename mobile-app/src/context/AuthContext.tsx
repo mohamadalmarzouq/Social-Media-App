@@ -134,6 +134,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await AsyncStorage.removeItem('mobile-auth-token');
     } catch (error) {
       console.error('Sign out error:', error);
+    } finally {
+      setUser(null);
+      await AsyncStorage.removeItem('user-session');
     }
   };
 

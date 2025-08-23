@@ -92,6 +92,20 @@ export default function CreateContestScreen() {
   const currentFilesNeededOptions = getFilesNeededOptions(formData.service);
   const currentPackageTypes = getPackageTypes(formData.service, formData.filesNeeded);
 
+  const filesNeededOptions = [
+    'Source Files',
+    'Static Post',
+    'Animated Post',
+    'Video Content',
+    'Brand Guidelines',
+  ];
+
+  const packageTypes = [
+    'Package 1 (Expect 30, Get 1 winner)',
+    'Package 2 (Expect 50, Get 2 winners)',
+    'Package 3 (Expect 100, Get 3 winners)',
+  ];
+
   const colorPresets = [
     '#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#FFFF00',
     '#32CD32', '#00CED1', '#1E90FF', '#0000FF', '#4B0082',
@@ -120,14 +134,8 @@ export default function CreateContestScreen() {
     }
   };
 
-  // Reset files and package when service changes
   const handleServiceSelect = (service: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      service,
-      filesNeeded: [], // Reset files when service changes
-      packageType: '' // Reset package when service changes
-    }));
+    setFormData(prev => ({ ...prev, service }));
   };
 
   const handleFilesNeededToggle = (fileType: string) => {
@@ -136,7 +144,6 @@ export default function CreateContestScreen() {
       filesNeeded: prev.filesNeeded.includes(fileType)
         ? prev.filesNeeded.filter(f => f !== fileType)
         : [...prev.filesNeeded, fileType],
-      packageType: '', // Reset package when files change
     }));
   };
 
@@ -172,13 +179,11 @@ export default function CreateContestScreen() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contests`, {
+      const response = await fetch(`${API_BASE_URL}/contests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(formData),
       });
 
@@ -309,25 +314,11 @@ export default function CreateContestScreen() {
       <View style={styles.summaryBox}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Expected Submissions</Text>
-          <Text style={styles.summaryValue}>
-            {formData.packageType.includes('30') ? '30' : 
-             formData.packageType.includes('50') ? '50' : 
-             formData.packageType.includes('100') ? '100' : 
-             formData.packageType.includes('25') ? '25' : 
-             formData.packageType.includes('40') ? '40' : 
-             formData.packageType.includes('80') ? '80' : 
-             formData.packageType.includes('35') ? '35' : 
-             formData.packageType.includes('60') ? '60' : 
-             formData.packageType.includes('120') ? '120' : '0'}
-          </Text>
+          <Text style={styles.summaryValue}>30</Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Final Designs</Text>
-          <Text style={styles.summaryValue}>
-            {formData.packageType.includes('1 winner') ? '1' : 
-             formData.packageType.includes('2 winners') ? '2' : 
-             formData.packageType.includes('3 winners') ? '3' : '0'}
-          </Text>
+          <Text style={styles.summaryValue}>1</Text>
         </View>
       </View>
     </View>
