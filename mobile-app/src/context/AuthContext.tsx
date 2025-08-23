@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { mobileAuthAPI, testBackendConnectivity } from '../lib/api';
+import { apiFetch } from '../lib/api';
+import { getToken, setToken, clearToken } from '../lib/token';
 
 export interface User {
   id: string;
@@ -11,14 +11,11 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
-  isOnline: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (name: string, email: string, password: string, role: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   checkSession: () => Promise<void>;
-  testApiConnection: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,41 +34,25 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(true);
-
-  // Track network status - React Native compatible version
-  useEffect(() => {
-    // For now, assume online by default in mobile app
-    // We can add proper network detection later if needed
-    setIsOnline(true);
-    
-    // Note: In a production app, you would use:
-    // import NetInfo from '@react-native-async-storage/async-storage';
-    // But for now, let's keep it simple to get the app working
-  }, []);
 
   const checkSession = async () => {
     try {
-      const tokenData = await AsyncStorage.getItem('mobile-auth-token');
-      if (tokenData) {
-        setToken(tokenData);
+      const token = await getToken();
+      if (token) {
         // Verify token is still valid by calling /me endpoint
         try {
-          const userData = await mobileAuthAPI.me(tokenData);
+          const userData = await apiFetch('/api/mobile/me');
           if (userData.user) {
             setUser(userData.user);
           } else {
             // Token invalid, clear it
-            await AsyncStorage.removeItem('mobile-auth-token');
-            setToken(null);
+            await clearToken();
             setUser(null);
           }
         } catch (error) {
           // Token invalid, clear it
-          await AsyncStorage.removeItem('mobile-auth-token');
-          setToken(null);
+          await clearToken();
           setUser(null);
         }
       }
@@ -85,22 +66,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
       console.log('Attempting sign in with:', { email, password: '***' });
-      console.log('Network status:', isOnline ? 'Online' : 'Offline');
       
-      // Check if we're online - React Native compatible version
-      if (!isOnline) {
-        console.error('Device appears to be offline');
-        return false;
-      }
+      // Call the mobile login endpoint
+      const data = await apiFetch('/api/mobile/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
       
-      // Use the new mobile auth API
-      const data = await mobileAuthAPI.login(email, password);
       console.log('Sign in response:', data);
 
       if (data.token && data.user) {
-        setToken(data.token);
+        await setToken(data.token);
         setUser(data.user);
-        await AsyncStorage.setItem('mobile-auth-token', data.token);
         console.log('Sign in successful, token and user set:', { token: data.token, user: data.user });
         return true;
       } else {
@@ -129,52 +106,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      setToken(null);
+      await clearToken();
       setUser(null);
-      await AsyncStorage.removeItem('mobile-auth-token');
     } catch (error) {
       console.error('Sign out error:', error);
-    } finally {
-      setUser(null);
-      await AsyncStorage.removeItem('user-session');
     }
   };
 
-  const testApiConnection = async (): Promise<boolean> => {
-    try {
-      console.log('=== NETWORK DIAGNOSTICS START ===');
-      console.log('Platform: React Native (Expo)');
-      console.log('Current network status:', isOnline ? 'Online' : 'Offline');
-      
-      // Test basic connectivity first
-      try {
-        console.log('Testing basic internet connectivity...');
-        const testResponse = await fetch('https://httpbin.org/get');
-        console.log('Basic internet connectivity test:', testResponse.ok);
-        console.log('Response status:', testResponse.status);
-      } catch (error) {
-        console.error('Basic internet connectivity test failed:', error);
-      }
-      
-      // Test our backend connectivity
-      try {
-        console.log('Testing backend connectivity...');
-        const backendOk = await testBackendConnectivity();
-        console.log('Backend connectivity test result:', backendOk);
-        console.log('=== NETWORK DIAGNOSTICS END ===');
-        return backendOk;
-      } catch (error) {
-        console.error('Backend connectivity test failed:', error);
-        console.log('=== NETWORK DIAGNOSTICS END ===');
-        return false;
-      }
-      
-    } catch (error) {
-      console.error('API connection test failed:', error);
-      console.log('=== NETWORK DIAGNOSTICS END ===');
-      return false;
-    }
-  };
+
 
   useEffect(() => {
     checkSession();
@@ -182,14 +121,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
-    token,
     isLoading,
-    isOnline,
     signIn,
     signUp,
     signOut,
     checkSession,
-    testApiConnection,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

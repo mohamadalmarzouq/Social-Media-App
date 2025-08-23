@@ -13,38 +13,39 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { WinningDesign } from '../types';
-import { workAPI } from '../lib/api';
+import { apiFetch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 type WorkScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Work'>;
 
 export default function WorkScreen() {
   const navigation = useNavigation<WorkScreenNavigationProp>();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   
   const [winningDesigns, setWinningDesigns] = useState<WinningDesign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadWinningDesigns();
     }
-  }, [token]);
+  }, [user]);
 
   const loadWinningDesigns = async () => {
-    if (!token) return;
+    if (!user) return;
     
     setIsLoading(true);
     try {
-      // Load winning designs using the new API with JWT authentication
-      const designsData = await workAPI.getWork(token);
+      // Load winning designs using the new API system
+      const designsData = await apiFetch('/api/work');
       const designs = designsData.designs || [];
       
       console.log('Loaded winning designs:', designs);
       setWinningDesigns(designs);
     } catch (error) {
       console.error('Error loading winning designs:', error);
+      console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to load winning designs');
     } finally {
       setIsLoading(false);

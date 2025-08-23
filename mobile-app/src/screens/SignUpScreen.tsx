@@ -21,7 +21,7 @@ type SignUpScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignU
 
 export default function SignUpScreen() {
   const navigation = useNavigation<SignUpScreenNavigationProp>();
-  const { signUp, isOnline } = useAuth();
+  const { signUp } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -115,12 +115,7 @@ export default function SignUpScreen() {
           <Text style={styles.title}>Social Media Contest App</Text>
           <Text style={styles.subtitle}>Create your account</Text>
           
-          {/* Network Status Indicator */}
-          <View style={[styles.networkStatus, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]}>
-            <Text style={styles.networkStatusText}>
-              {isOnline ? '🟢 Online' : '🔴 Offline'}
-            </Text>
-          </View>
+
         </View>
 
         {/* Sign Up Form */}

@@ -1,0 +1,1 @@
+export const API_BASE = "https://social-media-app-o787.onrender.com";

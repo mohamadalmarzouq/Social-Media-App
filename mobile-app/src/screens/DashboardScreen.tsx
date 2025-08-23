@@ -15,13 +15,13 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { useAuth } from '../context/AuthContext';
 import { Contest, DashboardStats } from '../types';
-import { contestAPI, testBackendConnectivity } from '../lib/api';
+import { apiFetch } from '../lib/api';
 
 type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
-  const { user, token, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
   const [stats, setStats] = useState<DashboardStats>({
     totalContests: 0,
@@ -34,27 +34,23 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadDashboardData();
     }
-  }, [token]);
+  }, [user]);
 
   const loadDashboardData = async () => {
-    if (!token) return;
+    if (!user) return;
     
     setIsLoading(true);
     try {
-      // ADD THESE 4 LINES RIGHT HERE:
-      console.log('🔍 Token in loadDashboardData:', token ? 'Present' : 'Missing');
-      console.log('🔍 User object:', user);
-      console.log('🔍 User ID:', user?.id);
-      console.log('🔍 User Role:', user?.role);
+      console.log('🔍 Loading dashboard data for user:', user);
       
-      // Load contests with JWT authentication
-      const contestsData = await contestAPI.getContests(token);
+      // Load contests using new API system
+      const contestsData = await apiFetch('/api/contests');
       const contests = contestsData.contests || [];
       
-      console.log('Loaded contests:', contests); // Debug log
+      console.log('Loaded contests:', contests);
       
       // Calculate stats
       const totalContests = contests.length;
@@ -72,6 +68,7 @@ export default function DashboardScreen() {
       setActiveContests(activeContests);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to load dashboard data');
     } finally {
       setIsLoading(false);
@@ -125,31 +122,22 @@ export default function DashboardScreen() {
   };
 
   const cancelContest = async (contestId: string) => {
-    if (!token) return;
+    if (!user) return;
     
     try {
-      await contestAPI.cancelContest(contestId, token);
+      await apiFetch(`/api/contests/${contestId}/cancel`, {
+        method: 'POST',
+      });
       Alert.alert('Success', 'Contest cancelled successfully');
       loadDashboardData();
     } catch (error) {
       console.error('Error cancelling contest:', error);
+      console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to cancel contest');
     }
   };
 
-  const handleTestConnection = async () => {
-    try {
-      const isConnected = await testBackendConnectivity();
-      if (isConnected) {
-        Alert.alert('Success', 'Backend connection successful!');
-      } else {
-        Alert.alert('Error', 'Backend connection failed');
-      }
-    } catch (error) {
-      console.error('Connection test error:', error);
-      Alert.alert('Error', 'Connection test failed');
-    }
-  };
+
 
   const renderStatCard = (title: string, value: number, color: string, icon: string) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
@@ -238,9 +226,7 @@ export default function DashboardScreen() {
             </LinearGradient>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.testButton} onPress={handleTestConnection}>
-            <Text style={styles.testButtonText}>Test</Text>
-          </TouchableOpacity>
+          
           
           <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
             <Text style={styles.signOutButtonText}>Sign Out</Text>
@@ -359,20 +345,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  testButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    justifyContent: 'center',
-  },
-  testButtonText: {
-    color: '#6B7280',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   signOutButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,

@@ -21,7 +21,7 @@ type SignInScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignI
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInScreenNavigationProp>();
-  const { signIn, testApiConnection, isOnline } = useAuth();
+  const { signIn } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,18 +53,7 @@ export default function SignInScreen() {
     }
   };
 
-  const handleTestApiConnection = async () => {
-    try {
-      const isConnected = await testApiConnection();
-      if (isConnected) {
-        Alert.alert('Success', 'API connection is working!');
-      } else {
-        Alert.alert('Error', 'Cannot connect to the API. Check your internet connection.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to test API connection');
-    }
-  };
+
 
   const handleSignUp = () => {
     navigation.navigate('SignUp');
@@ -91,12 +80,7 @@ export default function SignInScreen() {
           <Text style={styles.title}>Social Media Contest App</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
           
-          {/* Network Status Indicator */}
-          <View style={[styles.networkStatus, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]}>
-            <Text style={styles.networkStatusText}>
-              {isOnline ? '🟢 Online' : '🔴 Offline'}
-            </Text>
-          </View>
+
         </View>
 
         {/* Sign In Form */}
@@ -151,13 +135,7 @@ export default function SignInScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Test API Connection Button */}
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleTestApiConnection}
-            >
-              <Text style={styles.testButtonText}>Test API Connection</Text>
-            </TouchableOpacity>
+
 
             <View style={styles.signUpContainer}>
               <Text style={styles.signUpText}>Don't have an account? </Text>

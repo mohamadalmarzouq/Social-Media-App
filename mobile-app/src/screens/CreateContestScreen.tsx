@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { ContestFormData } from '../types';
-import { API_BASE_URL } from '../lib/config';
+import { apiFetch } from '../lib/api';
 
 type CreateContestScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CreateContest'>;
 
@@ -179,24 +179,17 @@ export default function CreateContestScreen() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/contests`, {
+      await apiFetch('/api/contests', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        Alert.alert('Success', 'Contest created successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('Dashboard') },
-        ]);
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create contest');
-      }
+      Alert.alert('Success', 'Contest created successfully!', [
+        { text: 'OK', onPress: () => navigation.navigate('Dashboard') },
+      ]);
     } catch (error) {
       console.error('Error creating contest:', error);
+      console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to create contest');
     } finally {
       setIsSubmitting(false);
