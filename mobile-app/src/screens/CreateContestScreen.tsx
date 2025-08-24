@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { ContestFormData } from '../types';
-import { apiFetch } from '../lib/api';
+import { createContest } from '../lib/api';
 
 type CreateContestScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CreateContest'>;
 
@@ -179,10 +179,7 @@ export default function CreateContestScreen() {
 
     setIsSubmitting(true);
     try {
-      await apiFetch('/api/contests', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
+      await createContest(formData);
 
       Alert.alert('Success', 'Contest created successfully!', [
         { text: 'OK', onPress: () => navigation.navigate('Dashboard') },

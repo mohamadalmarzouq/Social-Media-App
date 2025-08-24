@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../lib/api';
+import { getContestDetails } from '../lib/api';
 import { Contest } from '../types';
 
 type ContestDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ContestDetails'>;
@@ -39,7 +39,7 @@ export default function ContestDetailsScreen() {
     
     setIsLoading(true);
     try {
-      const contestData = await apiFetch(`/api/contests/${contestId}/details`);
+      const contestData = await getContestDetails(contestId);
       setContest(contestData.contest);
     } catch (error) {
       console.error('Error loading contest details:', error);

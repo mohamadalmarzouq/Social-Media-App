@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { WinningDesign } from '../types';
-import { apiFetch } from '../lib/api';
+import { getWork } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 type WorkScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Work'>;
@@ -38,7 +38,7 @@ export default function WorkScreen() {
     setIsLoading(true);
     try {
       // Load winning designs using the new API system
-      const designsData = await apiFetch('/api/work');
+      const designsData = await getWork();
       const designs = designsData.designs || [];
       
       console.log('Loaded winning designs:', designs);

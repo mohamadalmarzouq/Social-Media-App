@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../lib/api';
+import { getContestSubmissions, acceptSubmission, passSubmission } from '../lib/api';
 import { Submission } from '../types';
 
 type ReviewSubmissionsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ReviewSubmissions'>;
@@ -39,7 +39,7 @@ export default function ReviewSubmissionsScreen() {
     
     setIsLoading(true);
     try {
-      const submissionsData = await apiFetch(`/api/contests/${contestId}/submissions`);
+      const submissionsData = await getContestSubmissions(contestId);
       setSubmissions(submissionsData.submissions || []);
     } catch (error) {
       console.error('Error loading submissions:', error);
@@ -52,9 +52,7 @@ export default function ReviewSubmissionsScreen() {
 
   const handleAcceptSubmission = async (submissionId: string) => {
     try {
-      await apiFetch(`/api/submissions/${submissionId}/accept`, {
-        method: 'POST',
-      });
+      await acceptSubmission(submissionId);
       Alert.alert('Success', 'Submission accepted!');
       loadSubmissions(); // Reload to update status
     } catch (error) {
@@ -66,9 +64,7 @@ export default function ReviewSubmissionsScreen() {
 
   const handlePassSubmission = async (submissionId: string) => {
     try {
-      await apiFetch(`/api/submissions/${submissionId}/pass`, {
-        method: 'POST',
-      });
+      await passSubmission(submissionId);
       Alert.alert('Success', 'Submission passed!');
       loadSubmissions(); // Reload to update status
     } catch (error) {

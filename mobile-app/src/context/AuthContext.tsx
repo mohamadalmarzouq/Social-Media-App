@@ -2,6 +2,20 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiFetch } from '../lib/api';
 import { getToken, setToken, clearToken } from '../lib/token';
 
+// Global error handler for unauthorized responses
+const handleUnauthorizedError = async (error: any, clearTokenFn: () => Promise<void>) => {
+  if (error.message && (
+    error.message.includes('Unauthorized') || 
+    error.message.includes('401') ||
+    (typeof error.message === 'string' && error.message.includes('"error":"Unauthorized"'))
+  )) {
+    console.log('🔐 Unauthorized error detected, clearing session');
+    await clearTokenFn();
+    return true; // Error was handled
+  }
+  return false; // Error was not handled
+};
+
 export interface User {
   id: string;
   name: string;
@@ -51,9 +65,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
           }
         } catch (error) {
-          // Token invalid, clear it
-          await clearToken();
-          setUser(null);
+          // Check if it's an unauthorized error
+          const wasHandled = await handleUnauthorizedError(error, clearToken);
+          if (wasHandled) {
+            setUser(null);
+          } else {
+            // Other error, clear token anyway
+            await clearToken();
+            setUser(null);
+          }
         }
       }
     } catch (error) {

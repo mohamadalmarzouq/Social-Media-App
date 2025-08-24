@@ -15,7 +15,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import { useAuth } from '../context/AuthContext';
 import { Contest, DashboardStats } from '../types';
-import { apiFetch } from '../lib/api';
+import { getContests, cancelContest } from '../lib/api';
 
 type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Dashboard'>;
 
@@ -47,7 +47,7 @@ export default function DashboardScreen() {
       console.log('🔍 Loading dashboard data for user:', user);
       
       // Load contests using new API system
-      const contestsData = await apiFetch('/api/contests');
+      const contestsData = await getContests();
       const contests = contestsData.contests || [];
       
       console.log('Loaded contests:', contests);
@@ -125,9 +125,7 @@ export default function DashboardScreen() {
     if (!user) return;
     
     try {
-      await apiFetch(`/api/contests/${contestId}/cancel`, {
-        method: 'POST',
-      });
+      await cancelContest(contestId);
       Alert.alert('Success', 'Contest cancelled successfully');
       loadDashboardData();
     } catch (error) {
