@@ -40,11 +40,27 @@ export default function ReviewSubmissionsScreen() {
     setIsLoading(true);
     try {
       const submissionsData = await getContestSubmissions(contestId);
-      setSubmissions(submissionsData.submissions || []);
+      console.log('Submissions data received:', submissionsData);
+      
+      // Check if the API returned an error
+      if (submissionsData.error) {
+        console.error('API returned error:', submissionsData.error);
+        Alert.alert('Error', submissionsData.error || 'Failed to load submissions');
+        setSubmissions([]);
+        return;
+      }
+      
+      // Ensure we have a valid submissions array, default to empty if undefined
+      const submissionsArray = submissionsData?.submissions || [];
+      console.log('Processed submissions array:', submissionsArray);
+      
+      setSubmissions(submissionsArray);
     } catch (error) {
       console.error('Error loading submissions:', error);
       console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to load submissions');
+      // Set empty array on error to prevent crashes
+      setSubmissions([]);
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +91,8 @@ export default function ReviewSubmissionsScreen() {
   };
 
   const getStatusColor = (status: string) => {
+    if (!status) return '#6B7280';
+    
     switch (status) {
       case 'ACCEPTED':
         return '#10B981';
@@ -86,6 +104,21 @@ export default function ReviewSubmissionsScreen() {
         return '#6B7280';
     }
   };
+
+  // Safety check for submissions data
+  const safeSubmissions = submissions || [];
+  const hasSubmissions = safeSubmissions.length > 0;
+
+  // Additional safety check for malformed data
+  const validSubmissions = safeSubmissions.filter(submission => 
+    submission && 
+    submission.id && 
+    submission.designer && 
+    submission.status
+  );
+
+  console.log('🔍 Safe submissions count:', safeSubmissions.length);
+  console.log('✅ Valid submissions count:', validSubmissions.length);
 
   if (isLoading) {
     return (
@@ -120,7 +153,7 @@ export default function ReviewSubmissionsScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {submissions.length === 0 ? (
+        {!validSubmissions || validSubmissions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No submissions yet</Text>
             <Text style={styles.emptySubtext}>
@@ -128,23 +161,29 @@ export default function ReviewSubmissionsScreen() {
             </Text>
           </View>
         ) : (
-          submissions.map((submission) => (
+          validSubmissions.map((submission) => (
             <View key={submission.id} style={styles.submissionCard}>
               <View style={styles.submissionHeader}>
                 <View style={styles.designerInfo}>
-                  <Text style={styles.designerName}>{submission.designer.name}</Text>
-                  <Text style={styles.designerEmail}>{submission.designer.email}</Text>
+                  <Text style={styles.designerName}>
+                    {submission.designer?.name || 'Unknown Designer'}
+                  </Text>
+                  <Text style={styles.designerEmail}>
+                    {submission.designer?.email || 'No email'}
+                  </Text>
                 </View>
                 <View style={[styles.statusTag, { backgroundColor: getStatusColor(submission.status) }]}>
-                  <Text style={styles.statusText}>{submission.status}</Text>
+                  <Text style={styles.statusText}>{submission.status || 'UNKNOWN'}</Text>
                 </View>
               </View>
               
               <View style={styles.submissionDetails}>
-                <Text style={styles.detailText}>Round: {submission.round}</Text>
-                <Text style={styles.detailText}>Files: {submission.files.length}</Text>
+                <Text style={styles.detailText}>Round: {submission.round || 'N/A'}</Text>
                 <Text style={styles.detailText}>
-                  Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                  Files: {submission.assets?.length || submission.files?.length || 0}
+                </Text>
+                <Text style={styles.detailText}>
+                  Submitted: {submission.createdAt ? new Date(submission.createdAt).toLocaleDateString() : 'Unknown date'}
                 </Text>
               </View>
               

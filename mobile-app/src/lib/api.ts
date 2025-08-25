@@ -95,7 +95,15 @@ export async function getContestDetails(contestId: string) {
 }
 
 export async function getContestSubmissions(contestId: string) {
-  return fetchWithAuth(`/api/contests/${contestId}/submissions`);
+  try {
+    console.log('🔍 Fetching submissions for contest:', contestId);
+    const result = await fetchWithAuth(`/api/contests/${contestId}/submissions`);
+    console.log('📦 Submissions API response:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error in getContestSubmissions:', error);
+    throw error;
+  }
 }
 
 export async function cancelContest(contestId: string) {

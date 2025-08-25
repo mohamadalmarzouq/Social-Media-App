@@ -64,7 +64,13 @@ export interface Submission {
     name: string;
     email: string;
   };
-  files: string[];
+  assets?: Array<{
+    id: string;
+    url: string;
+    filename: string;
+    type: string;
+  }>;
+  files?: string[]; // Keep for backward compatibility
   status: 'PENDING' | 'ACCEPTED' | 'PASSED';
   round: number;
   comments: Comment[];

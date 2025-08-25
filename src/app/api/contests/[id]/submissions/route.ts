@@ -9,27 +9,34 @@ export async function GET(
   try {
     // Use dual authentication (web session OR mobile JWT)
     const userData = await requireUserMobile(request);
+    console.log('🔐 User authenticated:', { userId: userData.id, role: userData.role });
 
     const params = await context.params;
+    const contestId = params.id;
+    console.log('🎯 Fetching submissions for contest:', contestId);
     
     // Verify the contest exists and belongs to this user
     const contest = await prisma.contest.findUnique({
-      where: { id: params.id },
+      where: { id: contestId },
       select: { userId: true },
     });
 
     if (!contest) {
+      console.log('❌ Contest not found:', contestId);
       return NextResponse.json({ error: 'Contest not found' }, { status: 404 });
     }
 
     if (contest.userId !== userData.id) {
+      console.log('❌ Unauthorized access attempt:', { contestUserId: contest.userId, requestUserId: userData.id });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    console.log('✅ Contest access verified, fetching submissions...');
 
     // Get all submissions for this contest
     const submissions = await prisma.submission.findMany({
       where: {
-        contestId: params.id,
+        contestId: contestId,
         // Only show submissions that have design files uploaded
         assets: {
           some: {} // At least one asset must exist
@@ -73,9 +80,12 @@ export async function GET(
       ],
     });
 
+    console.log('📊 Found submissions:', submissions.length);
+    console.log('📋 Submissions data:', JSON.stringify(submissions, null, 2));
+
     return NextResponse.json({ submissions });
   } catch (error) {
-    console.error('Error fetching contest submissions:', error);
+    console.error('❌ Error fetching contest submissions:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
