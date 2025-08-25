@@ -8,6 +8,9 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Modal,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -27,6 +30,9 @@ export default function ReviewSubmissionsScreen() {
   
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [isDesignModalVisible, setIsDesignModalVisible] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     if (user) {
@@ -88,6 +94,38 @@ export default function ReviewSubmissionsScreen() {
       console.error('Error response body:', error);
       Alert.alert('Error', 'Failed to pass submission');
     }
+  };
+
+  const handleViewDesign = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setIsDesignModalVisible(true);
+    // Initialize loading states for all assets
+    if (submission.assets) {
+      const loadingStates: {[key: string]: boolean} = {};
+      submission.assets.forEach(asset => {
+        loadingStates[asset.id] = true;
+      });
+      setImageLoadingStates(loadingStates);
+    }
+  };
+
+  const handleImageLoad = (assetId: string) => {
+    setImageLoadingStates(prev => ({
+      ...prev,
+      [assetId]: false
+    }));
+  };
+
+  const handleImageError = (assetId: string) => {
+    setImageLoadingStates(prev => ({
+      ...prev,
+      [assetId]: false
+    }));
+  };
+
+  const closeDesignModal = () => {
+    setIsDesignModalVisible(false);
+    setSelectedSubmission(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -187,27 +225,100 @@ export default function ReviewSubmissionsScreen() {
                 </Text>
               </View>
               
-              {submission.status === 'PENDING' && (
-                <View style={styles.actionButtons}>
+              <View style={styles.submissionActions}>
+                {/* View Design Button - Always visible if there are files */}
+                {((submission.assets && submission.assets.length > 0) || (submission.files && submission.files.length > 0)) && (
                   <TouchableOpacity 
-                    style={[styles.actionButton, styles.acceptButton]} 
-                    onPress={() => handleAcceptSubmission(submission.id)}
+                    style={[styles.actionButton, styles.viewDesignButton]} 
+                    onPress={() => handleViewDesign(submission)}
                   >
-                    <Text style={styles.actionButtonText}>Accept</Text>
+                    <Text style={styles.actionButtonText}>View Design</Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.passButton]} 
-                    onPress={() => handlePassSubmission(submission.id)}
-                  >
-                    <Text style={styles.actionButtonText}>Pass</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+                )}
+                
+                {/* Accept/Pass buttons - Only for pending submissions */}
+                {submission.status === 'PENDING' && (
+                  <View style={styles.acceptPassRow}>
+                    <TouchableOpacity 
+                      style={[styles.actionButton, styles.acceptButton]} 
+                      onPress={() => handleAcceptSubmission(submission.id)}
+                    >
+                      <Text style={styles.actionButtonText}>Accept</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.actionButton, styles.passButton]} 
+                      onPress={() => handlePassSubmission(submission.id)}
+                    >
+                      <Text style={styles.actionButtonText}>Pass</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
           ))
         )}
       </ScrollView>
+
+      {/* Design View Modal */}
+      <Modal
+        visible={isDesignModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeDesignModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity style={styles.closeButton} onPress={closeDesignModal}>
+              <Text style={styles.closeButtonText}>✕ Close</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              Design by {selectedSubmission?.designer?.name || 'Unknown Designer'}
+            </Text>
+          </View>
+          
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {selectedSubmission?.assets?.map((asset, index) => (
+              <View key={asset.id} style={styles.assetContainer}>
+                <Text style={styles.assetTitle}>
+                  {asset.filename || `Design ${index + 1}`}
+                </Text>
+                <Text style={styles.assetType}>Type: {asset.type}</Text>
+                
+                {asset.url && (
+                  <View style={styles.imageContainer}>
+                    {imageLoadingStates[asset.id] && (
+                      <View style={styles.imageLoadingContainer}>
+                        <ActivityIndicator size="large" color="#3B82F6" />
+                        <Text style={styles.imageLoadingText}>Loading design...</Text>
+                      </View>
+                    )}
+                    <Image
+                      source={{ uri: asset.url }}
+                      style={[
+                        styles.designImage,
+                        { opacity: imageLoadingStates[asset.id] ? 0 : 1 }
+                      ]}
+                      resizeMode="contain"
+                      onLoad={() => handleImageLoad(asset.id)}
+                      onError={() => handleImageError(asset.id)}
+                    />
+                  </View>
+                )}
+              </View>
+            )) || selectedSubmission?.files?.map((file, index) => (
+              <View key={index} style={styles.assetContainer}>
+                <Text style={styles.assetTitle}>Design {index + 1}</Text>
+                <Text style={styles.assetType}>File: {file}</Text>
+              </View>
+            )) || (
+              <View style={styles.noAssetsContainer}>
+                <Text style={styles.noAssetsText}>No design files available</Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -350,5 +461,123 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    marginTop: 50, // Add some margin from top for better appearance
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  modalContent: {
+    flex: 1,
+    paddingBottom: 20,
+  },
+  assetContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 15,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  assetTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  assetType: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  designImage: {
+    width: Math.min(Dimensions.get('window').width - 80, 400), // Responsive width
+    height: 250,
+    borderRadius: 8,
+  },
+  noAssetsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  noAssetsText: {
+    fontSize: 18,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  viewDesignButton: {
+    backgroundColor: '#3B82F6',
+    marginBottom: 10,
+    width: '100%',
+  },
+  submissionActions: {
+    marginTop: 10,
+  },
+  acceptPassRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 5,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  imageLoadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  imageLoadingText: {
+    marginTop: 10,
+    color: '#3B82F6',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
