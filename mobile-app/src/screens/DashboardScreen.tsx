@@ -114,14 +114,14 @@ export default function DashboardScreen() {
           'Are you sure you want to cancel this contest? This action cannot be undone.',
           [
             { text: 'No', style: 'cancel' },
-            { text: 'Yes, Cancel', style: 'destructive', onPress: () => cancelContest(contest.id) },
+            { text: 'Yes, Cancel', style: 'destructive', onPress: () => handleCancelContest(contest.id) },
           ]
         );
         break;
     }
   };
 
-  const cancelContest = async (contestId: string) => {
+  const handleCancelContest = async (contestId: string) => {
     if (!user) return;
     
     try {

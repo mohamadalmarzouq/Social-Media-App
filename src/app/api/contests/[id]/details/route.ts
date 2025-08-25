@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireUserMobile } from '@/lib/mobileAuth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -8,11 +7,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
     const params = await context.params;
     const contest = await prisma.contest.findUnique({
@@ -51,9 +47,9 @@ export async function GET(
             submissions: true,
           },
         },
-        submissions: session.user.role === 'DESIGNER' ? {
+        submissions: userData.role === 'DESIGNER' ? {
           where: {
-            designerId: session.user.id,
+            designerId: userData.id,
           },
           select: {
             id: true,
@@ -76,7 +72,7 @@ export async function GET(
 
     // For designers, add their submission status
     let contestWithStatus = contest;
-    if (session.user.role === 'DESIGNER' && contest.submissions) {
+    if (userData.role === 'DESIGNER' && contest.submissions) {
       contestWithStatus = {
         ...contest,
         userSubmission: contest.submissions.length > 0 ? contest.submissions[0] : null,

@@ -1,38 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireUserMobile } from '@/lib/mobileAuth';
 import { prisma } from '@/lib/prisma';
-import { syncContestAcceptedCount } from '@/lib/utils';
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (session.user.role !== 'USER') {
-      return NextResponse.json({ error: 'Only business owners can pass submissions' }, { status: 403 });
-    }
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
     const params = await context.params;
+    const submissionId = params.id;
+
+    // Get the submission with contest info
     const submission = await prisma.submission.findUnique({
-      where: { id: params.id },
+      where: { id: submissionId },
       include: {
         contest: {
           select: {
             id: true,
             userId: true,
-            title: true,
-          },
-        },
-        designer: {
-          select: {
-            name: true,
-            email: true,
+            status: true,
+            round: true,
           },
         },
       },
@@ -42,33 +32,33 @@ export async function POST(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
-    if (submission.contest.userId !== session.user.id) {
+    // Check if the user owns the contest
+    if (submission.contest.userId !== userData.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Update submission status to passed
-    const updatedSubmission = await prisma.submission.update({
-      where: { id: params.id },
+    // Check if the contest is active
+    if (submission.contest.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'Contest is not active' }, { status: 400 });
+    }
+
+    // Check if the submission is in the current round
+    if (submission.round !== submission.contest.round) {
+      return NextResponse.json({ error: 'Submission is not in the current round' }, { status: 400 });
+    }
+
+    // Check if the submission is pending
+    if (submission.status !== 'PENDING') {
+      return NextResponse.json({ error: 'Submission is not pending' }, { status: 400 });
+    }
+
+    // Update the submission status
+    await prisma.submission.update({
+      where: { id: submissionId },
       data: { status: 'PASSED' },
-      include: {
-        contest: true,
-        designer: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
     });
 
-    // Sync the contest's accepted count to ensure accuracy
-    const newAcceptedCount = await syncContestAcceptedCount(updatedSubmission.contestId);
-
-    return NextResponse.json({
-      message: 'Submission passed successfully',
-      submission: updatedSubmission,
-      newAcceptedCount,
-    });
+    return NextResponse.json({ message: 'Submission passed successfully' });
   } catch (error) {
     console.error('Error passing submission:', error);
     return NextResponse.json(

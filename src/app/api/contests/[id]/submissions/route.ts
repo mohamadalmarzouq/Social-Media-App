@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireUserMobile } from '@/lib/mobileAuth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -8,11 +7,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Use dual authentication (web session OR mobile JWT)
+    const userData = await requireUserMobile(request);
 
     const params = await context.params;
     
@@ -26,7 +22,7 @@ export async function GET(
       return NextResponse.json({ error: 'Contest not found' }, { status: 404 });
     }
 
-    if (contest.userId !== session.user.id) {
+    if (contest.userId !== userData.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
